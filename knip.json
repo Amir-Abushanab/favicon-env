@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  // Entries (index/ssr/global) are auto-detected from package.json `exports` and
+  // tsup.config.ts. `test/**` is ignored because the tests import the built
+  // `dist/` output (the published artifact), not `src/`.
+  "project": ["src/**/*.ts"],
+  "ignore": ["test/**"]
+}

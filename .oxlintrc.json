@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // `error` fails `oxlint` (and therefore `pnpm check` / the pre-commit hook).
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    // hash.ts uses bitwise ops (Math.imul + xor) for a fast FNV-1a string hash —
+    // that's the whole point of the function, not an accidental `&&`/`&` typo.
+    "eslint/no-bitwise": "off"
+  },
+  "ignorePatterns": ["dist", "node_modules"]
+}

@@ -1,0 +1,76 @@
+{
+  "name": "favicon-env",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Tint your favicon per environment (dev/staging/prod) so you can tell instances apart at a glance. Runtime canvas mode + build-time SVG mode. Zero dependencies.",
+  "license": "MIT",
+  "author": "Amir Abushanab",
+  "keywords": [
+    "favicon",
+    "environment",
+    "env",
+    "dev",
+    "staging",
+    "hue",
+    "tint",
+    "canvas",
+    "developer-experience",
+    "dx"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amir-abushanab/favicon-env.git"
+  },
+  "homepage": "https://github.com/amir-abushanab/favicon-env#readme",
+  "bugs": "https://github.com/amir-abushanab/favicon-env/issues",
+  "packageManager": "pnpm@11.9.0",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ssr": {
+      "types": "./dist/ssr.d.ts",
+      "import": "./dist/ssr.js"
+    },
+    "./global": "./dist/favicon-env.global.js"
+  },
+  "unpkg": "./dist/favicon-env.global.js",
+  "jsdelivr": "./dist/favicon-env.global.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src",
+    "format": "oxfmt src",
+    "knip": "knip",
+    "depcruise": "depcruise src",
+    "check": "oxfmt --check src && oxlint src && knip && depcruise src",
+    "pretest": "pnpm build",
+    "test": "node --test",
+    "ncu": "pnpm dlx npm-check-updates",
+    "prepack": "pnpm build",
+    "prepare": "simple-git-hooks"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm check"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "^18.0.0",
+    "knip": "^6.20.0",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "simple-git-hooks": "^2.13.1",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Local env overrides. .env.example (if any) stays tracked.
+.env
+.env.*
+!.env.example

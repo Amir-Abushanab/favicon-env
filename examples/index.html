@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>favicon-env — tint your favicon per environment</title>
+<meta
+  name="description"
+  content="Tint your favicon per environment (dev/staging/prod) so you can tell instances apart at a glance. Zero-dependency, runtime + build-time."
+/>
+<!-- Base favicon (blue rounded square) — the demo re-tints this live as you click. -->
+<link
+  id="fav"
+  rel="icon"
+  type="image/svg+xml"
+  href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2221%22%20r%3D%228%22%20fill%3D%22%23fff%22%20opacity%3D%22.85%22%2F%3E%3C%2Fsvg%3E"
+/>
+<style>
+  :root {
+    --bg: #0a0b14; --panel: rgba(255, 255, 255, 0.035); --line: rgba(255, 255, 255, 0.1);
+    --fg: #e8ebff; --muted: #9aa3c8; --dim: #7b83a8; --accent: #7c9cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--fg);
+    background: radial-gradient(120% 90% at 50% -10%, #16193200 0%, var(--bg) 55%), var(--bg);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 20px 64px;
+  }
+  main { width: 100%; max-width: 760px; }
+  header { text-align: center; padding: 56px 0 8px; }
+  .logo { width: 60px; height: 60px; border-radius: 15px; display: inline-block;
+    background: conic-gradient(from 210deg, #5ad8ff, #8b6bff, #ff4f9d, #ffd36b, #5ad8ff);
+    box-shadow: 0 8px 30px #8b6bff40; }
+  h1 { font-size: 30px; letter-spacing: -0.02em; margin: 16px 0 6px; }
+  h1 code { font: inherit; }
+  .tagline { color: var(--muted); font-size: 16px; margin: 0 auto; max-width: 30em; }
+  .cta { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 22px 0 4px; }
+  .install { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px; }
+  .install .p { color: var(--dim); }
+  a.link { color: var(--fg); text-decoration: none; border: 1px solid var(--line);
+    border-radius: 9px; padding: 8px 14px; font-size: 13.5px; }
+  a.link:hover { border-color: var(--accent); color: #fff; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    padding: 22px; margin-top: 34px; }
+  .card h2 { font-size: 15px; margin: 0 0 2px; }
+  .card p.hint { color: var(--muted); font-size: 13.5px; margin: 0 0 16px; }
+  #controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: inherit; font-size: 13.5px; color: var(--fg); background: #1b1e33;
+    border: 1px solid #2c3050; border-radius: 9px; padding: 7px 13px; cursor: pointer; }
+  button:hover { background: #232641; border-color: var(--accent); }
+  #out { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; min-height: 130px; }
+  .tile { display: flex; flex-direction: column; gap: 8px; align-items: center; width: 104px; }
+  .tile img { width: 88px; height: 88px; background: #ffffff08; border: 1px solid var(--line); border-radius: 14px; }
+  .tile b { font-size: 12.5px; text-align: center; }
+  .tile code { font-size: 10.5px; color: var(--dim); }
+  footer { color: var(--dim); font-size: 13px; margin-top: 36px; text-align: center; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="logo" aria-hidden="true"></span>
+    <h1><code>favicon-env</code></h1>
+    <p class="tagline">Tint your favicon per environment, so you can tell instances apart at a glance.</p>
+    <div class="cta">
+      <span class="install"><span class="p">$</span> pnpm add favicon-env</span>
+      <a class="link" href="https://github.com/amir-abushanab/favicon-env">GitHub</a>
+      <a class="link" href="https://www.npmjs.com/package/favicon-env">npm</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Try it — this tab's favicon re-tints as you click</h2>
+    <p class="hint">Each button runs <code>envFavicon(...)</code> against the base icon and swaps in the result. Watch the tab (top-left).</p>
+    <div id="controls"></div>
+    <div id="out"></div>
+  </section>
+
+  <footer>
+    Zero dependencies · runtime + build-time (SSR) · MIT.
+    Full API in the <a href="https://github.com/amir-abushanab/favicon-env#readme">README</a>.
+  </footer>
+</main>
+
+<script type="module">
+  import { envFavicon, hashHue } from '../dist/index.js';
+
+  const base = document.getElementById('fav').href;
+  const out = document.getElementById('out');
+  const controls = document.getElementById('controls');
+
+  // A different base image, to demo `src` (arbitrary image per environment).
+  const altLogo =
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+        '<rect width="64" height="64" rx="14" fill="#14b8a6"/>' +
+        '<circle cx="32" cy="32" r="14" fill="none" stroke="#fff" stroke-width="6"/></svg>',
+    );
+
+  const environments = {
+    dev: { hue: 130 },
+    staging: { badge: '#f59e0b' },
+    preview: { badge: { text: '#344', color: '#8b5cf6' } }, // PR-preview number overlay
+    custom: { src: altLogo, badge: { text: 'S', color: '#0ea5e9' } }, // arbitrary image + badge
+    prod: false,
+  };
+
+  function resetFavicon() {
+    document.querySelectorAll('link[rel~="icon"]').forEach((l) => l.remove());
+    const l = document.createElement('link');
+    l.rel = 'icon'; l.type = 'image/svg+xml'; l.href = base;
+    document.head.append(l);
+  }
+
+  async function apply(label, opts) {
+    resetFavicon();
+    await envFavicon(opts);
+    const href = document.querySelector('link[rel~="icon"]').href;
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    const img = document.createElement('img');
+    img.src = href; img.alt = label;
+    const b = document.createElement('b'); b.textContent = label;
+    tile.append(img, b);
+    out.prepend(tile);
+  }
+
+  const named = (env) => ({ environments, detect: () => env });
+  const rulesPort = { rules: [{ match: /:(\d+)$/, badge: { text: '#$1', color: '#0ea5e9' } }] };
+  const buttons = [
+    ['dev · hue', () => apply('dev · hue 130', named('dev'))],
+    ['staging · dot', () => apply('staging · dot', named('staging'))],
+    ['preview · #344', () => apply('preview · #344', named('preview'))],
+    ['custom image', () => apply('custom · image', named('custom'))],
+    ['rules · URL match', () => apply('rules · port', rulesPort)],
+    ['prod · untouched', () => apply('prod · untouched', named('prod'))],
+    ['auto · host hash', () => apply('auto · hue ' + hashHue(location.host), { auto: true })],
+  ];
+  for (const [name, fn] of buttons) {
+    const btn = document.createElement('button');
+    btn.textContent = name; btn.onclick = fn;
+    controls.append(btn);
+  }
+
+  // Show a representative spread on load.
+  (async () => {
+    await apply('custom · image', named('custom'));
+    await apply('rules · port', rulesPort);
+    await apply('preview · #344', named('preview'));
+    await apply('dev · hue 130', named('dev'));
+  })();
+</script>
+</body>
+</html>
