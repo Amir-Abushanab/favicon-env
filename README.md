@@ -76,6 +76,12 @@ rules: [
 
 `textColor` defaults to auto (black/white by contrast with `color`).
 
+Multi-digit numbers get cramped in a corner at 16px. `shape: 'cover'` replaces the icon with a full-bleed number so it reads even in the tab (or keep the icon and just enlarge the pill with `size` + `corner: 'center'`):
+
+```js
+{ badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } }
+```
+
 ### A different image per environment
 
 Set `src` to swap the base image outright for an environment — e.g. a distinct staging logo. Any `hue` / `filter` / `badge` still composites on top:
@@ -145,7 +151,7 @@ faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 })
 
 `EnvTint`: `{ hue?: number; filter?: string; src?: string; badge?: string | Badge }`. `filter` (any CSS filter) beats `hue`; `src` replaces the base image for that env; `badge` is a colour string (a dot) or a `Badge`.
 
-`Badge`: `{ text?: string | number; color?: string; textColor?: string; corner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }`. Omit `text` for a dot; include it (e.g. a PR number) for a pill. Everything composites in one pass, so you can combine `src` + `hue`/`filter` + `badge`.
+`Badge`: `{ text?: string | number; color?: string; textColor?: string; shape?: 'pill' | 'cover'; corner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'; size?: number }`. Omit `text` for a dot; include it for a pill. `color` sets the background and `textColor` the text (default: auto black/white by contrast). Two styles: the default `'pill'` sits on top of your icon (placed by `corner`/`size`); `'cover'` replaces the whole icon with the colour + number, best for a multi-digit number that must read at 16px. Everything composites in one pass, so you can combine `src` + `hue`/`filter` + `badge`.
 
 `EnvRule`: an `EnvTint` plus `match: RegExp | ((url: URL) => boolean)`. A `RegExp` is tested against `location.host` and its captures interpolate into `badge.text` (`$1`, `$<name>`); a function receives the `URL`, and in a rule `badge.text` may also be `(match, url) => string | number`.
 

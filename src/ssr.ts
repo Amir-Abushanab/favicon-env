@@ -44,29 +44,60 @@ function svgBadge([minX, minY, w, h]: [number, number, number, number], badge: B
   const text = badge.text == null ? '' : String(badge.text);
   const color = badge.color ?? '#ef4444';
   const corner = badge.corner ?? 'bottom-right';
-  const bh = h * 0.5;
+  const bh = h * (badge.size ?? 0.5);
   const fontSize = bh * 0.62;
   const margin = w * 0.02;
   // SVG has no text metrics at build time; approximate glyph width at ~0.62em,
   // then clamp to the icon so a long label (e.g. a big PR number) can't overflow.
   const natural = text ? Math.max(bh, text.length * fontSize * 0.62 + bh * 0.5) : bh;
   const bw = text ? Math.min(natural, w - margin * 2) : bh;
-  const x = corner.endsWith('left') ? minX + margin : minX + w - bw - margin;
-  const y = corner.startsWith('top') ? minY + margin : minY + h - bh - margin;
+  let x: number;
+  let y: number;
+  if (corner === 'center') {
+    x = minX + (w - bw) / 2;
+    y = minY + (h - bh) / 2;
+  } else {
+    x = corner.endsWith('left') ? minX + margin : minX + w - bw - margin;
+    y = corner.startsWith('top') ? minY + margin : minY + h - bh - margin;
+  }
+  const rx = text ? Math.min(bh / 2, w * 0.24) : bh / 2;
   // If clamped, force the glyphs to fit the pill width.
   const fit =
-    bw < natural ? ` textLength="${round(bw - bh * 0.5)}" lengthAdjust="spacingAndGlyphs"` : '';
+    bw < natural ? ` textLength="${round(bw - bh * 0.4)}" lengthAdjust="spacingAndGlyphs"` : '';
   const label = text
     ? `<text x="${round(x + bw / 2)}" y="${round(y + bh / 2)}" fill="${escapeXml(
         badge.textColor ?? '#fff',
-      )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="600" ` +
+      )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
       `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`
     : '';
   return (
     `<g><rect x="${round(x)}" y="${round(y)}" width="${round(bw)}" height="${round(bh)}" ` +
-    `rx="${round(bh / 2)}" fill="${escapeXml(color)}" stroke="rgba(0,0,0,0.35)" ` +
+    `rx="${round(rx)}" fill="${escapeXml(color)}" stroke="rgba(0,0,0,0.35)" ` +
     `stroke-width="${round(h * 0.015)}"/>${label}</g>`
   );
+}
+
+/** Build a full-icon "cover" tile — a background rect plus a big centred number. */
+function svgCover([minX, minY, w, h]: [number, number, number, number], badge: Badge): string {
+  const color = badge.color ?? '#ef4444';
+  const text = badge.text == null ? '' : String(badge.text);
+  const side = Math.min(w, h);
+  const rect =
+    `<rect x="${round(minX)}" y="${round(minY)}" width="${round(w)}" height="${round(h)}" ` +
+    `rx="${round(side * 0.2)}" fill="${escapeXml(color)}"/>`;
+  if (!text) return `<g>${rect}</g>`;
+  const fontSize = side * 0.62;
+  const maxLen = w * 0.84;
+  const fit =
+    text.length * fontSize * 0.62 > maxLen
+      ? ` textLength="${round(maxLen)}" lengthAdjust="spacingAndGlyphs"`
+      : '';
+  const label =
+    `<text x="${round(minX + w / 2)}" y="${round(minY + h / 2)}" fill="${escapeXml(
+      badge.textColor ?? '#fff',
+    )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
+    `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`;
+  return `<g>${rect}${label}</g>`;
 }
 
 /**
@@ -89,6 +120,14 @@ export function tintSvg(svg: string, tint: EnvConfig): string {
   const close = svg.lastIndexOf('</svg>');
   if (close === -1) return svg;
   const openEnd = open.index + open[0].length;
+
+  // `shape: 'cover'` replaces the icon's content with a full-bleed number tile.
+  if (badge?.shape === 'cover') {
+    const vb = parseViewBox(open[0]);
+    if (!vb) return svg;
+    return `${svg.slice(0, openEnd)}${svgCover(vb, badge)}${svg.slice(close)}`;
+  }
+
   const inner = svg.slice(openEnd, close);
   // No XML comments injected here — XML comments may not contain `--`, which
   // every `--custom-property` does, and that silently breaks favicon SVGs.

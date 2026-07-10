@@ -20,7 +20,7 @@ export interface EnvTint {
   badge?: string | Badge;
 }
 
-/** A corner badge drawn on top of the icon. */
+/** A badge drawn on top of the icon. */
 export interface Badge {
   /** Text to render, e.g. a PR number (`344`, `'#344'`). Omit for a plain dot. */
   text?: string | number;
@@ -28,11 +28,19 @@ export interface Badge {
   color?: string;
   /** Text colour. Default: auto — black or white, whichever contrasts with `color`. */
   textColor?: string;
-  /** Which corner it sits in. Default `'bottom-right'`. */
+  /**
+   * `'pill'` (default) draws a rounded badge on top of your icon, placed by
+   * `corner` / `size`. `'cover'` replaces the whole icon with the colour + a big
+   * centred number — nothing of the base shows through, so it reads at 16px.
+   */
+  shape?: 'pill' | 'cover';
+  /** Where a pill sits. Default `'bottom-right'`; `'center'` overlays the icon. */
   corner?: BadgeCorner;
+  /** Pill height as a fraction of the icon (0–1). Default `0.5`. (Ignored by `'cover'`.) */
+  size?: number;
 }
 
-export type BadgeCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type BadgeCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 
 /** Per-environment config. `false` / `null` / omitted leaves the favicon untouched. */
 export type EnvConfig = EnvTint | false | null | undefined;

@@ -151,3 +151,23 @@ test('a badge is skipped when the svg has no viewBox or width/height', () => {
   const svg = '<svg><rect/></svg>';
   assert.equal(tintSvg(svg, { badge: { text: '1' } }), svg);
 });
+
+test('badge size scales the pill (default = half the icon)', () => {
+  const dot = tintSvg('<svg viewBox="0 0 100 100"><rect/></svg>', { badge: '#f00' });
+  assert.match(dot, /<rect[^>]*height="50"/, 'default 0.5 → 50');
+  const big = tintSvg('<svg viewBox="0 0 100 100"><rect/></svg>', {
+    badge: { text: '344', size: 1, corner: 'center' },
+  });
+  assert.match(big, /<rect[^>]*height="100"/, 'size 1 → full height');
+  assert.match(big, /font-weight="700"/);
+  assert.match(big, />344</);
+});
+
+test('badge shape "cover" replaces the icon with a full-bleed number tile', () => {
+  const svg = '<svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#00f"/></svg>';
+  const out = tintSvg(svg, { badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } });
+  assert.ok(!out.includes('fill="#00f"'), 'drops the base content');
+  assert.match(out, /<rect[^>]*width="64"[^>]*height="64"[^>]*fill="#8b5cf6"/);
+  assert.match(out, />#344</);
+  assert.match(out, /font-weight="700"/);
+});

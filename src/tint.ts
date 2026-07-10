@@ -139,27 +139,58 @@ function traceRoundRect(
 
 function drawBadge(ctx: CanvasRenderingContext2D, size: number, badge: Badge): void {
   const color = badge.color ?? '#ef4444';
-  const corner = badge.corner ?? 'bottom-right';
   const text = badge.text == null ? '' : String(badge.text);
   const family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
-  const h = Math.round(size * 0.5);
+
+  // `shape: 'cover'` fills the whole icon and centres the number as big as it fits.
+  if (badge.shape === 'cover') {
+    traceRoundRect(ctx, 0, 0, size, size, Math.round(size * 0.2));
+    ctx.fillStyle = color;
+    ctx.fill();
+    if (text) {
+      const maxWidth = size * 0.84;
+      let fontSize = Math.round(size * 0.62);
+      ctx.font = `700 ${fontSize}px ${family}`;
+      const textWidth = ctx.measureText(text).width;
+      if (textWidth > maxWidth) {
+        fontSize = Math.max(7, Math.floor(fontSize * (maxWidth / textWidth)));
+        ctx.font = `700 ${fontSize}px ${family}`;
+      }
+      ctx.fillStyle = badge.textColor ?? contrastText(ctx, color);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, size / 2, size / 2);
+    }
+    return;
+  }
+
+  const corner = badge.corner ?? 'bottom-right';
+  const h = Math.round(size * (badge.size ?? 0.5));
   const margin = Math.round(size * 0.02);
   const maxWidth = size - margin * 2;
   const pad = Math.round(h * 0.5);
-  // Circle for a dot / single glyph; a stadium pill widens to fit longer text,
-  // shrinking the font if a long label (e.g. a big PR number) would overflow.
+  // A dot / short label sits in a pill that widens (then the font shrinks) to fit
+  // longer text. Bump badge.size + corner:'center' to make a number dominate.
   let fontSize = Math.round(h * 0.66);
-  ctx.font = `600 ${fontSize}px ${family}`;
+  ctx.font = `700 ${fontSize}px ${family}`;
   let w = text ? Math.max(h, Math.ceil(ctx.measureText(text).width) + pad) : h;
   if (w > maxWidth) {
     fontSize = Math.max(7, Math.floor(fontSize * (maxWidth / w)));
-    ctx.font = `600 ${fontSize}px ${family}`;
+    ctx.font = `700 ${fontSize}px ${family}`;
     w = Math.min(maxWidth, Math.max(h, Math.ceil(ctx.measureText(text).width) + pad));
   }
-  const x = corner.endsWith('left') ? margin : size - w - margin;
-  const y = corner.startsWith('top') ? margin : size - h - margin;
+  let x: number;
+  let y: number;
+  if (corner === 'center') {
+    x = Math.round((size - w) / 2);
+    y = Math.round((size - h) / 2);
+  } else {
+    x = corner.endsWith('left') ? margin : size - w - margin;
+    y = corner.startsWith('top') ? margin : size - h - margin;
+  }
+  const radius = text ? Math.min(h / 2, size * 0.24) : h / 2;
 
-  traceRoundRect(ctx, x, y, w, h, h / 2);
+  traceRoundRect(ctx, x, y, w, h, radius);
   ctx.fillStyle = color;
   ctx.fill();
   ctx.lineWidth = Math.max(1, size * 0.03);
@@ -196,8 +227,25 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
   const tint = resolveTint(options);
   if (!tint) return Promise.resolve();
 
+  const badge = tint.badge != null ? normalizeBadge(tint.badge) : undefined;
+  const size = options.size ?? 64;
+
+  // `shape: 'cover'` replaces the icon with a number tile — no base image needed,
+  // so draw it synchronously.
+  if (badge?.shape === 'cover') {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      drawBadge(ctx, size, badge);
+      applyFavicon(canvas.toDataURL('image/png'), 'image/png');
+    }
+    return Promise.resolve();
+  }
+
   // Plain image swap: a custom `src` with nothing to composite skips the canvas.
-  const needsCanvas = tint.hue != null || Boolean(tint.filter) || Boolean(tint.badge);
+  const needsCanvas = tint.hue != null || Boolean(tint.filter) || Boolean(badge);
   if (!needsCanvas) {
     if (tint.src) applyFavicon(tint.src, inferType(tint.src));
     return Promise.resolve();
@@ -205,7 +253,6 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
 
   originalSource ??= currentIconHref();
   const source = tint.src ?? options.source ?? originalSource ?? '/favicon.ico';
-  const size = options.size ?? 64;
 
   return new Promise<void>((resolve) => {
     const img = new Image();
@@ -223,7 +270,7 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
           if (filter !== 'none') ctx.filter = filter;
           ctx.drawImage(img, 0, 0, size, size);
           ctx.filter = 'none';
-          if (tint.badge) drawBadge(ctx, size, normalizeBadge(tint.badge));
+          if (badge) drawBadge(ctx, size, badge);
           applyFavicon(canvas.toDataURL('image/png'), 'image/png');
         }
       } catch {
