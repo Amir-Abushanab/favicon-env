@@ -46,6 +46,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "demo": "pnpm build && node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",
     "format": "oxfmt src",
