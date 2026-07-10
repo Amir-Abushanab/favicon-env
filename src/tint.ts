@@ -229,10 +229,12 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
 
   const badge = tint.badge != null ? normalizeBadge(tint.badge) : undefined;
   const size = options.size ?? 64;
+  const cover = badge?.shape === 'cover';
+  const alpha = badge?.opacity ?? 1;
 
-  // `shape: 'cover'` replaces the icon with a number tile — no base image needed,
-  // so draw it synchronously.
-  if (badge?.shape === 'cover') {
+  // An opaque `cover` replaces the icon entirely — no base image needed, so draw
+  // it synchronously. A translucent cover falls through to composite over the base.
+  if (cover && alpha >= 1) {
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -266,11 +268,20 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          const filter = filterFor(tint);
-          if (filter !== 'none') ctx.filter = filter;
+          // `cover` ignores the hue/filter (it's replacing the icon); a plain tint
+          // applies it to the base. The base is always drawn here — a translucent
+          // cover shows it through.
+          if (!cover) {
+            const filter = filterFor(tint);
+            if (filter !== 'none') ctx.filter = filter;
+          }
           ctx.drawImage(img, 0, 0, size, size);
           ctx.filter = 'none';
-          if (badge) drawBadge(ctx, size, badge);
+          if (badge) {
+            ctx.globalAlpha = alpha;
+            drawBadge(ctx, size, badge);
+            ctx.globalAlpha = 1;
+          }
           applyFavicon(canvas.toDataURL('image/png'), 'image/png');
         }
       } catch {

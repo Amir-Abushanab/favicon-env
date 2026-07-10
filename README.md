@@ -142,7 +142,7 @@ faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 })
 
 | option         | type                                  | default              | description                                                        |
 | -------------- | ------------------------------------- | -------------------- | ------------------------------------------------------------------ |
-| `environments` | `Record<string, EnvTint \| false>`    | —                    | Map of env name → tint. Missing/`false` = leave untouched.         |
+| `environments` | `Record<string, EnvTint \| false>`    | —                    | Map of env name (any string) → tint. Missing/`false` = untouched.   |
 | `rules`        | `EnvRule[]`                           | —                    | URL-matched tints, checked first; regex captures fill `badge.text`.|
 | `detect`       | `() => string \| undefined`           | hostname heuristic   | Return the current env name (a key of `environments`).             |
 | `auto`         | `boolean \| { offset?: number }`      | `false`              | Ignore `environments`; derive a unique hue from `location.host`.   |
@@ -151,7 +151,7 @@ faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 })
 
 `EnvTint`: `{ hue?: number; filter?: string; src?: string; badge?: string | Badge }`. `filter` (any CSS filter) beats `hue`; `src` replaces the base image for that env; `badge` is a colour string (a dot) or a `Badge`.
 
-`Badge`: `{ text?: string | number; color?: string; textColor?: string; shape?: 'pill' | 'cover'; corner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'; size?: number }`. Omit `text` for a dot; include it for a pill. `color` sets the background and `textColor` the text (default: auto black/white by contrast). Two styles: the default `'pill'` sits on top of your icon (placed by `corner`/`size`); `'cover'` replaces the whole icon with the colour + number, best for a multi-digit number that must read at 16px. Everything composites in one pass, so you can combine `src` + `hue`/`filter` + `badge`.
+`Badge`: `{ text?: string | number; color?: string; textColor?: string; shape?: 'pill' | 'cover'; corner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'; size?: number; opacity?: number }`. Omit `text` for a dot; include it for a pill. `color` sets the background and `textColor` the text (default: auto black/white by contrast). Two styles: the default `'pill'` sits on top of your icon (placed by `corner`/`size`); `'cover'` replaces the whole icon with the colour + number, best for a multi-digit number that must read at 16px. `opacity` (0–1) fades the badge — with `'cover'`, below `1` it lets your icon show *through* the number (a watermark). Everything composites in one pass, so you can combine `src` + `hue`/`filter` + `badge`.
 
 `EnvRule`: an `EnvTint` plus `match: RegExp | ((url: URL) => boolean)`. A `RegExp` is tested against `location.host` and its captures interpolate into `badge.text` (`$1`, `$<name>`); a function receives the `URL`, and in a rule `badge.text` may also be `(match, url) => string | number`.
 

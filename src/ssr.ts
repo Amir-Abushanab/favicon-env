@@ -70,8 +70,9 @@ function svgBadge([minX, minY, w, h]: [number, number, number, number], badge: B
       )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
       `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`
     : '';
+  const op = (badge.opacity ?? 1) < 1 ? ` opacity="${round(badge.opacity ?? 1)}"` : '';
   return (
-    `<g><rect x="${round(x)}" y="${round(y)}" width="${round(bw)}" height="${round(bh)}" ` +
+    `<g${op}><rect x="${round(x)}" y="${round(y)}" width="${round(bw)}" height="${round(bh)}" ` +
     `rx="${round(rx)}" fill="${escapeXml(color)}" stroke="rgba(0,0,0,0.35)" ` +
     `stroke-width="${round(h * 0.015)}"/>${label}</g>`
   );
@@ -82,10 +83,11 @@ function svgCover([minX, minY, w, h]: [number, number, number, number], badge: B
   const color = badge.color ?? '#ef4444';
   const text = badge.text == null ? '' : String(badge.text);
   const side = Math.min(w, h);
+  const op = (badge.opacity ?? 1) < 1 ? ` opacity="${round(badge.opacity ?? 1)}"` : '';
   const rect =
     `<rect x="${round(minX)}" y="${round(minY)}" width="${round(w)}" height="${round(h)}" ` +
     `rx="${round(side * 0.2)}" fill="${escapeXml(color)}"/>`;
-  if (!text) return `<g>${rect}</g>`;
+  if (!text) return `<g${op}>${rect}</g>`;
   const fontSize = side * 0.62;
   const maxLen = w * 0.84;
   const fit =
@@ -97,7 +99,7 @@ function svgCover([minX, minY, w, h]: [number, number, number, number], badge: B
       badge.textColor ?? '#fff',
     )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
     `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`;
-  return `<g>${rect}${label}</g>`;
+  return `<g${op}>${rect}${label}</g>`;
 }
 
 /**
@@ -122,10 +124,12 @@ export function tintSvg(svg: string, tint: EnvConfig): string {
   const openEnd = open.index + open[0].length;
 
   // `shape: 'cover'` replaces the icon's content with a full-bleed number tile.
+  // A translucent cover (opacity < 1) keeps the base showing through instead.
   if (badge?.shape === 'cover') {
     const vb = parseViewBox(open[0]);
     if (!vb) return svg;
-    return `${svg.slice(0, openEnd)}${svgCover(vb, badge)}${svg.slice(close)}`;
+    const base = (badge.opacity ?? 1) < 1 ? svg.slice(openEnd, close) : '';
+    return `${svg.slice(0, openEnd)}${base}${svgCover(vb, badge)}${svg.slice(close)}`;
   }
 
   const inner = svg.slice(openEnd, close);

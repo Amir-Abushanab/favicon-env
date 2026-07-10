@@ -38,6 +38,8 @@ export interface Badge {
   corner?: BadgeCorner;
   /** Pill height as a fraction of the icon (0–1). Default `0.5`. (Ignored by `'cover'`.) */
   size?: number;
+  /** Badge opacity, 0–1 (default `1`). With `shape: 'cover'`, below `1` lets the icon show through. */
+  opacity?: number;
 }
 
 export type BadgeCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';

@@ -171,3 +171,21 @@ test('badge shape "cover" replaces the icon with a full-bleed number tile', () =
   assert.match(out, />#344</);
   assert.match(out, /font-weight="700"/);
 });
+
+test('badge opacity fades the group', () => {
+  const out = tintSvg('<svg viewBox="0 0 64 64"><rect/></svg>', {
+    badge: { text: '9', color: '#f00', opacity: 0.5 },
+  });
+  assert.match(out, /<g opacity="0.5">/);
+});
+
+test('a translucent cover keeps the base showing through', () => {
+  const svg = '<svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#00f"/></svg>';
+  assert.ok(
+    !tintSvg(svg, { badge: { text: '1', shape: 'cover' } }).includes('fill="#00f"'),
+    'opaque cover drops the base',
+  );
+  const translucent = tintSvg(svg, { badge: { text: '1', shape: 'cover', opacity: 0.6 } });
+  assert.ok(translucent.includes('fill="#00f"'), 'translucent cover keeps the base');
+  assert.match(translucent, /<g opacity="0.6">/);
+});
