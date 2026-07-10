@@ -52,17 +52,32 @@
   .lead { color: var(--muted); font-size: 13.5px; margin: 16px 0 16px; }
   .lead code { color: #cfd6f5; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
   .card { appearance: none; font: inherit; text-align: center; cursor: pointer; color: var(--fg);
     background: transparent; border: 1px solid var(--line); border-radius: 14px; padding: 16px 10px 12px;
-    display: flex; flex-direction: column; align-items: center; gap: 9px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
     transition: border-color .15s, background .15s, transform .05s; }
   .card:hover { border-color: #38406e; background: rgba(255, 255, 255, 0.03); }
   .card:active { transform: translateY(1px); }
   .card.active { border-color: var(--accent); background: #7c9cff14; box-shadow: inset 0 0 0 1px var(--accent); }
-  .card img { width: 70px; height: 70px; }
-  .card .lbl { font-size: 13px; font-weight: 650; }
-  .card code { font-size: 10.5px; color: var(--dim); line-height: 1.3; word-break: break-word; }
+  .card img { width: 66px; height: 66px; }
+  .card .lbl { font-size: 12.5px; font-weight: 650; }
+
+  /* Code example for the selected card. */
+  .code { position: relative; margin-top: 16px; background: #0c0e1c; border: 1px solid var(--line); border-radius: 12px; }
+  .code pre { margin: 0; padding: 16px 18px; overflow-x: auto; }
+  .code code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.65; white-space: pre; color: #cfd6f5; }
+  .copy { position: absolute; top: 9px; right: 9px; font: inherit; font-size: 11.5px; color: var(--muted);
+    background: #1b1e33; border: 1px solid var(--line); border-radius: 7px; padding: 4px 10px; cursor: pointer; }
+  .copy:hover { color: #fff; border-color: var(--accent); }
+  .t-comment { color: #6b7394; font-style: italic; }
+  .t-str { color: #9ece8a; }
+  .t-num, .t-bool { color: #e0a16a; }
+  .t-kw { color: #c586e0; }
+  .t-key { color: #7cc5ff; }
+  .t-fn { color: #e5c07b; }
+  .t-regex { color: #e06c75; }
+  .t-punct { color: #8b93b8; }
 
   footer { color: var(--dim); font-size: 13px; margin-top: 36px; text-align: center; }
   footer a { color: var(--muted); }
@@ -86,8 +101,12 @@
       <span class="tab"><img id="tabfav" alt="" /> favicon-env — demo</span>
       <span class="hint">← this favicon (and your real browser tab) updates when you pick a type</span>
     </div>
-    <p class="lead">Each card is a live <code>envFavicon(...)</code> config. Click one to apply it.</p>
+    <p class="lead">Click a card to apply it — its <code>envFavicon(...)</code> config is shown below.</p>
     <div class="grid" id="grid"></div>
+    <div class="code">
+      <button class="copy" id="copy" type="button">Copy</button>
+      <pre><code id="src"></code></pre>
+    </div>
   </section>
 
   <footer>
@@ -110,20 +129,76 @@
   const env = (name, tint) => ({ environments: { [name]: tint }, detect: () => name });
 
   // Each entry: how the icon looks (svg + tint, for the card preview via the SSR
-  // helper) and the exact envFavicon() options applied on click (the real API).
+  // helper), the exact envFavicon() options applied on click, and an idiomatic
+  // `source` snippet shown (syntax-highlighted) in the code panel.
   const types = [
-    { label: 'prod', code: 'left untouched', svg: base, tint: false, opts: env('prod', false) },
-    { label: 'dev', code: '{ hue: 130 }', svg: base, tint: { hue: 130 }, opts: env('dev', { hue: 130 }) },
-    { label: 'staging', code: "{ badge: '#f59e0b' }", svg: base, tint: { badge: '#f59e0b' }, opts: env('staging', { badge: '#f59e0b' }) },
-    { label: 'preview', code: "text:'#344', shape:'cover'", svg: base, tint: { badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } }, opts: env('preview', { badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } }) },
-    { label: 'custom', code: '{ src, badge }', svg: alt, tint: { badge: { text: 'S', color: '#0ea5e9' } }, opts: env('custom', { src: altUrl, badge: { text: 'S', color: '#0ea5e9' } }) },
-    { label: 'rules', code: '/:(\\d+)$/ → #$1', svg: base, tint: matchRules(ruleCfg, url), opts: { rules: ruleCfg } },
-    { label: 'auto', code: '{ auto: true }', svg: base, tint: { hue: hashHue(location.host) }, opts: { auto: true } },
+    {
+      label: 'prod', svg: base, tint: false, opts: env('prod', false),
+      source: `envFavicon({\n  environments: { prod: false },\n})`,
+    },
+    {
+      label: 'dev', svg: base, tint: { hue: 130 }, opts: env('dev', { hue: 130 }),
+      source: `envFavicon({\n  environments: {\n    dev: { hue: 130 },\n  },\n})`,
+    },
+    {
+      label: 'staging', svg: base, tint: { badge: '#f59e0b' }, opts: env('staging', { badge: '#f59e0b' }),
+      source: `envFavicon({\n  environments: {\n    staging: { badge: '#f59e0b' },\n  },\n})`,
+    },
+    {
+      label: 'preview', svg: base,
+      tint: { badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } },
+      opts: env('preview', { badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } }),
+      source: `envFavicon({\n  environments: {\n    preview: {\n      badge: { text: '#344', color: '#8b5cf6', shape: 'cover' },\n    },\n  },\n})`,
+    },
+    {
+      label: 'custom', svg: alt,
+      tint: { badge: { text: 'S', color: '#0ea5e9' } },
+      opts: env('custom', { src: altUrl, badge: { text: 'S', color: '#0ea5e9' } }),
+      source: `envFavicon({\n  environments: {\n    staging: {\n      src: '/logo.staging.svg',\n      badge: { text: 'S', color: '#0ea5e9' },\n    },\n  },\n})`,
+    },
+    {
+      label: 'rules', svg: base, tint: matchRules(ruleCfg, url), opts: { rules: ruleCfg },
+      source: `envFavicon({\n  rules: [\n    // e.g. localhost:5173 -> "#5173"\n    { match: /:(\\d+)$/, badge: { text: '#$1', shape: 'cover' } },\n  ],\n})`,
+    },
+    {
+      label: 'auto', svg: base, tint: { hue: hashHue(location.host) }, opts: { auto: true },
+      source: `envFavicon({ auto: true })`,
+    },
   ];
+
+  // --- tiny zero-dependency JS syntax highlighter ---
+  const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ESC[c]);
+  function highlight(code) {
+    const RE =
+      /(\/\/[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\/(?:[^/\\\n]|\\.)+\/[a-z]*)|(\b\d+(?:\.\d+)?\b)|(\b(?:true|false|null|undefined)\b)|(\b(?:const|let|import|from|export|return)\b)|([A-Za-z_$][\w$]*)|(\s+)|([^\s])/g;
+    const toks = [];
+    let m;
+    while ((m = RE.exec(code))) {
+      const type =
+        m[1] != null ? 'comment' : m[2] != null ? 'str' : m[3] != null ? 'regex'
+        : m[4] != null ? 'num' : m[5] != null ? 'bool' : m[6] != null ? 'kw'
+        : m[7] != null ? 'id' : m[8] != null ? 'ws' : 'punct';
+      toks.push([type, m[0]]);
+    }
+    for (let i = 0; i < toks.length; i += 1) {
+      if (toks[i][0] !== 'id') continue;
+      let j = i + 1;
+      while (j < toks.length && toks[j][0] === 'ws') j += 1;
+      const next = toks[j] && toks[j][1][0];
+      if (next === ':') toks[i][0] = 'key';
+      else if (next === '(') toks[i][0] = 'fn';
+    }
+    return toks
+      .map(([type, text]) => (type === 'ws' ? esc(text) : `<span class="t-${type}">${esc(text)}</span>`))
+      .join('');
+  }
 
   const grid = document.getElementById('grid');
   const tabfav = document.getElementById('tabfav');
+  const srcEl = document.getElementById('src');
   let active = null;
+  let currentSource = '';
 
   function resetFavicon() {
     document.querySelectorAll('link[rel~="icon"]').forEach((l) => l.remove());
@@ -137,6 +212,8 @@
     card.classList.add('active');
     active = card;
     tabfav.src = card.querySelector('img').src; // mirror into the mock tab
+    currentSource = type.source;
+    srcEl.innerHTML = highlight(type.source); // show its code
     resetFavicon();
     envFavicon(type.opts); // …and re-tint the real browser tab
   }
@@ -146,12 +223,21 @@
     card.type = 'button';
     card.className = 'card';
     const preview = faviconDataUri(type.svg, type.tint); // pure — no favicon swap
-    card.innerHTML =
-      `<img src="${preview}" width="70" height="70" alt="" />` +
-      `<span class="lbl">${type.label}</span><code>${type.code}</code>`;
+    card.innerHTML = `<img src="${preview}" width="66" height="66" alt="" /><span class="lbl">${type.label}</span>`;
     card.addEventListener('click', () => select(card, type));
     grid.append(card);
   }
+
+  const copyBtn = document.getElementById('copy');
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(currentSource);
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => (copyBtn.textContent = 'Copy'), 1200);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  });
 
   // Start on prod (base icon), highlighted.
   select(grid.firstElementChild, types[0]);
