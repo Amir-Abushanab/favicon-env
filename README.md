@@ -136,6 +136,55 @@ const pr = process.env.VERCEL_GIT_PULL_REQUEST_ID
 faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 })
 ```
 
+### Vite
+
+A plain Vite SPA has no template to bake the tint into — its `index.html` is static. Drop this small plugin into your `vite.config` to rewrite the `<link rel="icon">` at build time, choosing the tint from Vite's `mode`:
+
+```js
+// vite.config.js
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { defineConfig } from 'vite'
+import { faviconDataUri } from 'favicon-env/ssr'
+
+// keyed by Vite `mode` (e.g. `vite build --mode staging`); omit prod to leave it untouched
+const tints = {
+  development: { hue: 130 },
+  staging: { hue: 45 },
+}
+
+function faviconEnv() {
+  let config
+  return {
+    name: 'favicon-env',
+    configResolved(resolved) {
+      config = resolved
+    },
+    transformIndexHtml(html) {
+      const tint = tints[config.mode]
+      if (!tint) return // no rule for this mode → leave the icon alone
+      return html.replace(/<link\b[^>]*\brel=["']icon["'][^>]*>/i, (tag) => {
+        const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1]
+        if (!href?.endsWith('.svg')) return tag // SVG only; skip png/ico
+        let svg
+        try {
+          svg = readFileSync(path.join(config.publicDir, href.replace(/^\//, '')), 'utf8')
+        } catch {
+          return tag // not in public/ (missing / bundled asset) → untouched
+        }
+        return tag.replace(/\bhref=["'][^"']*["']/i, `href="${faviconDataUri(svg, tint)}"`)
+      })
+    },
+  }
+}
+
+export default defineConfig({
+  plugins: [faviconEnv()],
+})
+```
+
+Now `vite dev` and `vite build` serve the tint baked into the initial HTML — no first-paint flash — reading your favicon from `public/` and falling through untouched for non-SVG icons or a missing file. Prefer env vars to `--mode`? Swap `tints[config.mode]` for a lookup keyed off `loadEnv(config.mode, config.root, 'PUBLIC_').PUBLIC_APP_ENV`.
+
 ## API
 
 ### `envFavicon(options?): Promise<void>` — runtime
