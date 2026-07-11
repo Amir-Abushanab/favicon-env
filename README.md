@@ -30,7 +30,73 @@ envFavicon({
 })
 ```
 
-Call it once, as early as you can (e.g. your client entry, or a `useEffect`/`onMounted`). It reads the current `<link rel="icon">`, redraws it tinted, and swaps it in.
+Call it once on the client, as early as you can — it reads the current `<link rel="icon">`, redraws it tinted, and swaps it in. It's a no-op during SSR (it guards on `document`), so it's safe to import anywhere. Where it goes in the common setups:
+
+<details>
+<summary><b>Next.js</b> — App Router</summary>
+
+```tsx
+// app/favicon-env.tsx — a client component
+'use client'
+import { useEffect } from 'react'
+import { envFavicon } from 'favicon-env'
+
+export function FaviconEnv() {
+  useEffect(() => {
+    void envFavicon({ /* …environments, as above… */ })
+  }, [])
+  return null
+}
+```
+
+Then render `<FaviconEnv />` once inside `<body>` in `app/layout.tsx`. `useEffect` is the right hook here — a run-once, client-only side effect, safe under React StrictMode's double-invoke (re-tinting is idempotent). (Next ≥ 15.3: drop the call into `instrumentation-client.ts` and skip the component entirely. Pages Router: put the `useEffect` in `pages/_app.tsx`.)
+
+</details>
+
+<details>
+<summary><b>TanStack Router / Start</b></summary>
+
+```tsx
+// src/main.tsx — your client entry, before you render the router
+import { envFavicon } from 'favicon-env'
+
+void envFavicon({ /* …environments, as above… */ })
+```
+
+The entry runs on the client, so no `useEffect` is needed. (TanStack Start / SSR: the same call in your client entry is a no-op on the server, thanks to the `document` guard.)
+
+</details>
+
+<details>
+<summary><b>Astro</b></summary>
+
+```astro
+---
+// src/layouts/Layout.astro — a client <script>, bundled and run in the browser
+---
+<script>
+  import { envFavicon } from 'favicon-env'
+  void envFavicon({ /* …environments, as above… */ })
+</script>
+```
+
+For Astro you can also bake the tint straight into the HTML for **zero first-paint flash** — see the *Build-time / SSR mode* section below, which is the recommended path when you control the favicon SVG.
+
+</details>
+
+<details>
+<summary><b>Vite SPA · Vue · Svelte · vanilla</b></summary>
+
+```js
+// your client entry — src/main.ts, main.js, …
+import { envFavicon } from 'favicon-env'
+
+void envFavicon({ /* …environments, as above… */ })
+```
+
+The entry module already runs in the browser, so no framework hook is needed. (In Vue you could equally call it from `onMounted` in your root component.)
+
+</details>
 
 By default the environment is guessed from the hostname (`localhost` / `*.local` / raw IPs → `dev`; a `staging`/`preview`/`qa`/… segment → `staging`; everything else → `prod`). Override it:
 
@@ -40,6 +106,24 @@ envFavicon({
   detect: () => (location.port === '4000' ? 'staging' : 'prod'),
 })
 ```
+
+Environment **names are arbitrary** — they're just keys into `environments`, so you aren't limited to `dev`/`staging`/`prod`. Define your own and return them from `detect` (the built-in heuristic only emits the three defaults, so custom names need a custom `detect`):
+
+```js
+envFavicon({
+  environments: {
+    canary: { hue: 280 },
+    demo:   { badge: '#22c55e' },
+  },
+  detect: () => {
+    if (location.hostname.startsWith('canary.')) return 'canary'
+    if (location.hostname.endsWith('.demo.acme.com')) return 'demo'
+    return 'prod' // not in the map → favicon left untouched
+  },
+})
+```
+
+`detect` can key off anything, not just the hostname — e.g. `detect: () => import.meta.env.MODE`.
 
 ### Auto mode
 
