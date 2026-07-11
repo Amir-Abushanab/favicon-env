@@ -16,6 +16,8 @@ Tint your favicon per environment so you can tell instances apart at a glance â€
 pnpm add favicon-env
 ```
 
+> **Using an AI coding agent?** favicon-env ships an [Agent Skill](https://tanstack.com/intent) (via TanStack Intent) â€” run `npx @tanstack/intent@latest install` and your agent picks up the correct patterns (framework placement, badges, runtime vs SSR) straight from the package, versioned with it.
+
 ## Runtime mode
 
 ```js

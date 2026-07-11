@@ -15,7 +15,8 @@
     "tint",
     "canvas",
     "developer-experience",
-    "dx"
+    "dx",
+    "tanstack-intent"
   ],
   "repository": {
     "type": "git",
@@ -41,7 +42,9 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skills",
+    "!skills/_artifacts"
   ],
   "scripts": {
     "build": "tsup",
@@ -53,11 +56,12 @@
     "depcruise": "depcruise src",
     "check": "oxfmt --check src && oxlint src && knip && depcruise src",
     "publint": "publint --strict",
+    "intent:validate": "intent validate skills",
     "pretest": "pnpm build",
     "test": "node --test",
     "ncu": "pnpm dlx npm-check-updates",
     "prepack": "pnpm build",
-    "prepublishOnly": "pnpm run publint",
+    "prepublishOnly": "pnpm run publint && pnpm run intent:validate",
     "prepare": "simple-git-hooks"
   },
   "publishConfig": {
@@ -67,6 +71,7 @@
     "pre-commit": "pnpm check"
   },
   "devDependencies": {
+    "@tanstack/intent": "^0.3.5",
     "dependency-cruiser": "^18.0.0",
     "knip": "^6.24.0",
     "oxfmt": "^0.57.0",
