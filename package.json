@@ -60,6 +60,9 @@
     "pretest": "pnpm build",
     "test": "node --test",
     "ncu": "pnpm dlx npm-check-updates",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish",
     "prepack": "pnpm build",
     "prepublishOnly": "pnpm run publint && pnpm run intent:validate",
     "prepare": "simple-git-hooks"
@@ -71,6 +74,7 @@
     "pre-commit": "pnpm check"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@tanstack/intent": "^0.3.5",
     "dependency-cruiser": "^18.0.0",
     "knip": "^6.24.0",
