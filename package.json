@@ -52,10 +52,12 @@
     "knip": "knip",
     "depcruise": "depcruise src",
     "check": "oxfmt --check src && oxlint src && knip && depcruise src",
+    "publint": "publint --strict",
     "pretest": "pnpm build",
     "test": "node --test",
     "ncu": "pnpm dlx npm-check-updates",
     "prepack": "pnpm build",
+    "prepublishOnly": "pnpm run publint",
     "prepare": "simple-git-hooks"
   },
   "publishConfig": {
@@ -69,6 +71,7 @@
     "knip": "^6.20.0",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
+    "publint": "^0.3.21",
     "simple-git-hooks": "^2.13.1",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3"
