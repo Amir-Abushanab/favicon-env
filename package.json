@@ -68,9 +68,9 @@
   },
   "devDependencies": {
     "dependency-cruiser": "^18.0.0",
-    "knip": "^6.20.0",
-    "oxfmt": "^0.56.0",
-    "oxlint": "^1.71.0",
+    "knip": "^6.24.0",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
     "publint": "^0.3.21",
     "simple-git-hooks": "^2.13.1",
     "tsup": "^8.5.1",
