@@ -8,7 +8,7 @@ Tint your favicon per environment so you can tell instances apart at a glance �
 
 - **Runtime mode** — one import, any framework, any deploy. Detects the environment in the browser and re-tints the favicon on a `<canvas>`, so it works with whatever favicon you already have (svg / png / ico).
 - **Build-time mode** — a tiny SVG helper that bakes the tint in at build/SSR time, for zero first-paint flash.
-- **Zero dependencies.** ~1 kB.
+- **Zero dependencies.** ~2 kB min+gzip (the build-time SSR helper alone is ~1.5 kB).
 
 ## Install
 

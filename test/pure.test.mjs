@@ -172,6 +172,23 @@ test('badge shape "cover" replaces the icon with a full-bleed number tile', () =
   assert.match(out, /font-weight="700"/);
 });
 
+test('badge text auto-contrasts against the badge colour (like runtime)', () => {
+  const svg = '<svg viewBox="0 0 64 64"><rect/></svg>';
+  // light backgrounds → black text, dark → white; 3-digit hex is handled too
+  assert.match(tintSvg(svg, { badge: { text: '1', color: '#facc15' } }), /<text[^>]*fill="#000"/);
+  assert.match(tintSvg(svg, { badge: { text: '1', color: '#ff0' } }), /<text[^>]*fill="#000"/);
+  assert.match(tintSvg(svg, { badge: { text: '1', color: '#1e293b' } }), /<text[^>]*fill="#fff"/);
+  // `cover` too, and an explicit textColor still wins
+  assert.match(
+    tintSvg(svg, { badge: { text: '9', color: '#e2e8f0', shape: 'cover' } }),
+    /<text[^>]*fill="#000"/,
+  );
+  assert.match(
+    tintSvg(svg, { badge: { text: '9', color: '#e2e8f0', textColor: '#123456', shape: 'cover' } }),
+    /<text[^>]*fill="#123456"/,
+  );
+});
+
 test('badge opacity fades the group', () => {
   const out = tintSvg('<svg viewBox="0 0 64 64"><rect/></svg>', {
     badge: { text: '9', color: '#f00', opacity: 0.5 },

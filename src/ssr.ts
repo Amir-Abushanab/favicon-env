@@ -1,11 +1,7 @@
-import { normalizeBadge } from './badge';
-import type { Badge, EnvConfig, EnvTint } from './types';
-
-function cssFilter(tint: EnvTint): string | null {
-  if (tint.filter) return tint.filter;
-  if (typeof tint.hue === 'number') return `hue-rotate(${tint.hue}deg)`;
-  return null;
-}
+import { badgeText, DEFAULT_BADGE_COLOR, normalizeBadge, placeBadge } from './badge';
+import { contrastColor } from './color';
+import { cssFilter } from './filter';
+import type { Badge, EnvConfig } from './types';
 
 const XML_ESCAPES: Record<string, string> = {
   '&': '&amp;',
@@ -20,6 +16,32 @@ function escapeXml(value: string): string {
 }
 
 const round = (n: number): number => Math.round(n * 100) / 100;
+
+/** ` opacity="…"` attribute for a translucent badge group, else `''`. */
+function opacityAttr(badge: Badge): string {
+  return (badge.opacity ?? 1) < 1 ? ` opacity="${round(badge.opacity ?? 1)}"` : '';
+}
+
+/** Attributes that squeeze the glyphs into `len` when the natural text would overflow. */
+function fitText(len: number): string {
+  return ` textLength="${round(len)}" lengthAdjust="spacingAndGlyphs"`;
+}
+
+/** A centred, bold `<text>` element at (`cx`, `cy`) — the one badge-label form. */
+function svgText(
+  cx: number,
+  cy: number,
+  fill: string,
+  fontSize: number,
+  fit: string,
+  text: string,
+): string {
+  return (
+    `<text x="${round(cx)}" y="${round(cy)}" fill="${escapeXml(fill)}" ` +
+    `font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
+    `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`
+  );
+}
 
 /** Read the drawable box from a root `<svg>` tag: its `viewBox`, else `width`/`height`. */
 function parseViewBox(openTag: string): [number, number, number, number] | null {
@@ -41,8 +63,8 @@ function parseViewBox(openTag: string): [number, number, number, number] | null 
 
 /** Build an SVG `<g>` badge (dot, or a pill with text) sized to the viewBox. */
 function svgBadge([minX, minY, w, h]: [number, number, number, number], badge: Badge): string {
-  const text = badge.text == null ? '' : String(badge.text);
-  const color = badge.color ?? '#ef4444';
+  const text = badgeText(badge);
+  const color = badge.color ?? DEFAULT_BADGE_COLOR;
   const corner = badge.corner ?? 'bottom-right';
   const bh = h * (badge.size ?? 0.5);
   const fontSize = bh * 0.62;
@@ -51,28 +73,17 @@ function svgBadge([minX, minY, w, h]: [number, number, number, number], badge: B
   // then clamp to the icon so a long label (e.g. a big PR number) can't overflow.
   const natural = text ? Math.max(bh, text.length * fontSize * 0.62 + bh * 0.5) : bh;
   const bw = text ? Math.min(natural, w - margin * 2) : bh;
-  let x: number;
-  let y: number;
-  if (corner === 'center') {
-    x = minX + (w - bw) / 2;
-    y = minY + (h - bh) / 2;
-  } else {
-    x = corner.endsWith('left') ? minX + margin : minX + w - bw - margin;
-    y = corner.startsWith('top') ? minY + margin : minY + h - bh - margin;
-  }
+  const [px, py] = placeBadge(corner, w, h, bw, bh, margin);
+  const x = minX + px;
+  const y = minY + py;
   const rx = text ? Math.min(bh / 2, w * 0.24) : bh / 2;
   // If clamped, force the glyphs to fit the pill width.
-  const fit =
-    bw < natural ? ` textLength="${round(bw - bh * 0.4)}" lengthAdjust="spacingAndGlyphs"` : '';
+  const fit = bw < natural ? fitText(bw - bh * 0.4) : '';
   const label = text
-    ? `<text x="${round(x + bw / 2)}" y="${round(y + bh / 2)}" fill="${escapeXml(
-        badge.textColor ?? '#fff',
-      )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
-      `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`
+    ? svgText(x + bw / 2, y + bh / 2, badge.textColor ?? contrastColor(color), fontSize, fit, text)
     : '';
-  const op = (badge.opacity ?? 1) < 1 ? ` opacity="${round(badge.opacity ?? 1)}"` : '';
   return (
-    `<g${op}><rect x="${round(x)}" y="${round(y)}" width="${round(bw)}" height="${round(bh)}" ` +
+    `<g${opacityAttr(badge)}><rect x="${round(x)}" y="${round(y)}" width="${round(bw)}" height="${round(bh)}" ` +
     `rx="${round(rx)}" fill="${escapeXml(color)}" stroke="rgba(0,0,0,0.35)" ` +
     `stroke-width="${round(h * 0.015)}"/>${label}</g>`
   );
@@ -80,25 +91,25 @@ function svgBadge([minX, minY, w, h]: [number, number, number, number], badge: B
 
 /** Build a full-icon "cover" tile — a background rect plus a big centred number. */
 function svgCover([minX, minY, w, h]: [number, number, number, number], badge: Badge): string {
-  const color = badge.color ?? '#ef4444';
-  const text = badge.text == null ? '' : String(badge.text);
+  const color = badge.color ?? DEFAULT_BADGE_COLOR;
+  const text = badgeText(badge);
   const side = Math.min(w, h);
-  const op = (badge.opacity ?? 1) < 1 ? ` opacity="${round(badge.opacity ?? 1)}"` : '';
+  const op = opacityAttr(badge);
   const rect =
     `<rect x="${round(minX)}" y="${round(minY)}" width="${round(w)}" height="${round(h)}" ` +
     `rx="${round(side * 0.2)}" fill="${escapeXml(color)}"/>`;
   if (!text) return `<g${op}>${rect}</g>`;
   const fontSize = side * 0.62;
   const maxLen = w * 0.84;
-  const fit =
-    text.length * fontSize * 0.62 > maxLen
-      ? ` textLength="${round(maxLen)}" lengthAdjust="spacingAndGlyphs"`
-      : '';
-  const label =
-    `<text x="${round(minX + w / 2)}" y="${round(minY + h / 2)}" fill="${escapeXml(
-      badge.textColor ?? '#fff',
-    )}" font-family="system-ui, sans-serif" font-size="${round(fontSize)}" font-weight="700" ` +
-    `text-anchor="middle" dominant-baseline="central"${fit}>${escapeXml(text)}</text>`;
+  const fit = text.length * fontSize * 0.62 > maxLen ? fitText(maxLen) : '';
+  const label = svgText(
+    minX + w / 2,
+    minY + h / 2,
+    badge.textColor ?? contrastColor(color),
+    fontSize,
+    fit,
+    text,
+  );
   return `<g${op}>${rect}${label}</g>`;
 }
 

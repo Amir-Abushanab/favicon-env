@@ -1,21 +1,20 @@
-import { normalizeBadge } from './badge';
+import { badgeText, DEFAULT_BADGE_COLOR, normalizeBadge, placeBadge } from './badge';
+import { contrastColor } from './color';
 import { defaultDetect } from './detect';
+import { cssFilter } from './filter';
 import { hashHue } from './hash';
 import type { Badge, EnvFaviconOptions, EnvRule, EnvTint, RuleBadge } from './types';
+
+/** Selector for the favicon `<link>`(s) we read from and replace. */
+const ICON_LINK = 'link[rel~="icon"]';
 
 /** Remembered original favicon href, so repeat calls don't tint an already-tinted icon. */
 let originalSource: string | undefined;
 
 function currentIconHref(): string | undefined {
-  const links = document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]');
+  const links = document.querySelectorAll<HTMLLinkElement>(ICON_LINK);
   const last = links.item(links.length - 1);
   return last?.href || undefined;
-}
-
-function filterFor(tint: EnvTint): string {
-  if (tint.filter) return tint.filter;
-  if (typeof tint.hue === 'number') return `hue-rotate(${tint.hue}deg)`;
-  return 'none';
 }
 
 /** Fill `$1` / `$<name>` placeholders in a template from a regex match. */
@@ -91,7 +90,7 @@ function inferType(src: string): string | undefined {
 }
 
 function applyFavicon(href: string, type?: string): void {
-  document.querySelectorAll('link[rel~="icon"]').forEach((link) => link.remove());
+  document.querySelectorAll(ICON_LINK).forEach((link) => link.remove());
   const link = document.createElement('link');
   link.rel = 'icon';
   if (type) link.type = type;
@@ -100,23 +99,9 @@ function applyFavicon(href: string, type?: string): void {
   document.head.append(link);
 }
 
-function parseRgb(color: string): [number, number, number] | null {
-  const hex = /^#([0-9a-f]{6})$/i.exec(color);
-  if (hex) {
-    const n = Number.parseInt(hex[1], 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  }
-  const rgb = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(color);
-  if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
-  return null;
-}
-
 function contrastText(ctx: CanvasRenderingContext2D, background: string): string {
-  ctx.fillStyle = background;
-  const rgb = parseRgb(ctx.fillStyle); // canvas normalises any CSS colour to #rrggbb / rgba(…)
-  if (!rgb) return '#fff';
-  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
-  return luminance > 0.6 ? '#000' : '#fff';
+  ctx.fillStyle = background; // canvas normalises any CSS colour to #rrggbb / rgba(…)
+  return contrastColor(ctx.fillStyle);
 }
 
 function traceRoundRect(
@@ -138,8 +123,8 @@ function traceRoundRect(
 }
 
 function drawBadge(ctx: CanvasRenderingContext2D, size: number, badge: Badge): void {
-  const color = badge.color ?? '#ef4444';
-  const text = badge.text == null ? '' : String(badge.text);
+  const color = badge.color ?? DEFAULT_BADGE_COLOR;
+  const text = badgeText(badge);
   const family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 
   // `shape: 'cover'` fills the whole icon and centres the number as big as it fits.
@@ -179,15 +164,9 @@ function drawBadge(ctx: CanvasRenderingContext2D, size: number, badge: Badge): v
     ctx.font = `700 ${fontSize}px ${family}`;
     w = Math.min(maxWidth, Math.max(h, Math.ceil(ctx.measureText(text).width) + pad));
   }
-  let x: number;
-  let y: number;
-  if (corner === 'center') {
-    x = Math.round((size - w) / 2);
-    y = Math.round((size - h) / 2);
-  } else {
-    x = corner.endsWith('left') ? margin : size - w - margin;
-    y = corner.startsWith('top') ? margin : size - h - margin;
-  }
+  const [px, py] = placeBadge(corner, size, size, w, h, margin);
+  const x = Math.round(px);
+  const y = Math.round(py);
   const radius = text ? Math.min(h / 2, size * 0.24) : h / 2;
 
   traceRoundRect(ctx, x, y, w, h, radius);
@@ -272,8 +251,8 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
           // applies it to the base. The base is always drawn here — a translucent
           // cover shows it through.
           if (!cover) {
-            const filter = filterFor(tint);
-            if (filter !== 'none') ctx.filter = filter;
+            const filter = cssFilter(tint);
+            if (filter) ctx.filter = filter;
           }
           ctx.drawImage(img, 0, 0, size, size);
           ctx.filter = 'none';
