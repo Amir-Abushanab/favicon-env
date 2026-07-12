@@ -64,7 +64,7 @@
     "version": "changeset version",
     "release": "changeset publish",
     "prepack": "pnpm build",
-    "prepublishOnly": "pnpm run publint && pnpm run intent:validate",
+    "prepublishOnly": "pnpm build && pnpm run publint && pnpm run intent:validate",
     "prepare": "simple-git-hooks"
   },
   "publishConfig": {
