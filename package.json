@@ -1,6 +1,6 @@
 {
   "name": "favicon-env",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Tint your favicon per environment (dev/staging/prod) so you can tell instances apart at a glance. Runtime canvas mode + build-time SVG mode. Zero dependencies.",
   "license": "MIT",
