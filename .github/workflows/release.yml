@@ -1,0 +1,45 @@
+name: Release
+
+# When changesets are pending on main, opens/updates a "Version Packages" PR
+# (bump + CHANGELOG). Merging that PR — which leaves no pending changesets —
+# publishes to npm via OIDC trusted publishing (no NPM_TOKEN) with provenance,
+# and pushes the release tag. Configure the trusted publisher on npmjs.com with
+# workflow filename `release.yml`.
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}
+
+permissions:
+  contents: write # changesets: commit the version bump + push the release tag
+  pull-requests: write # changesets: open/update the Version Packages PR
+  id-token: write # npm trusted publishing (OIDC) + provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # reads the pinned pnpm from package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # OIDC trusted publishing needs Node > 22
+          cache: pnpm
+
+      # Trusted publishing needs npm >= 11.5.1 — guarantee it regardless of the
+      # version bundled with Node.
+      - run: npm install -g npm@latest
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Version PR or publish
+        uses: changesets/action@v1
+        with:
+          version: pnpm run version # changeset version (bump + CHANGELOG)
+          publish: pnpm run release # changeset publish (builds + gates, then publishes)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true # belt-and-suspenders; OIDC also enables it

@@ -20,10 +20,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amir-abushanab/favicon-env.git"
+    "url": "git+https://github.com/Amir-Abushanab/favicon-env.git"
   },
-  "homepage": "https://github.com/amir-abushanab/favicon-env#readme",
-  "bugs": "https://github.com/amir-abushanab/favicon-env/issues",
+  "homepage": "https://github.com/Amir-Abushanab/favicon-env#readme",
+  "bugs": "https://github.com/Amir-Abushanab/favicon-env/issues",
   "packageManager": "pnpm@11.9.0",
   "sideEffects": false,
   "exports": {
