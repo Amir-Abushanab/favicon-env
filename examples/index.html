@@ -142,6 +142,10 @@
       source: `envFavicon({\n  environments: {\n    // rotate the hue — e.g. a green tint for dev builds\n    dev: { hue: 130 },\n  },\n})`,
     },
     {
+      label: 'dev · tint', svg: base, tint: { tint: '#22c55e' }, opts: env('dev', { tint: '#22c55e' }),
+      source: `envFavicon({\n  environments: {\n    // colourise to an EXACT colour — keeps the artwork's shape + shading\n    dev: { tint: '#22c55e' },\n  },\n})`,
+    },
+    {
       label: 'staging · dot', svg: base, tint: { badge: '#f59e0b' }, opts: env('staging', { badge: '#f59e0b' }),
       source: `envFavicon({\n  environments: {\n    // a small corner dot in this colour\n    staging: { badge: '#f59e0b' },\n  },\n})`,
     },

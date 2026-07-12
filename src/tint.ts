@@ -226,7 +226,8 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
   }
 
   // Plain image swap: a custom `src` with nothing to composite skips the canvas.
-  const needsCanvas = tint.hue != null || Boolean(tint.filter) || Boolean(badge);
+  const needsCanvas =
+    tint.hue != null || Boolean(tint.filter) || Boolean(tint.tint) || Boolean(badge);
   if (!needsCanvas) {
     if (tint.src) applyFavicon(tint.src, inferType(tint.src));
     return Promise.resolve();
@@ -247,15 +248,29 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          // `cover` ignores the hue/filter (it's replacing the icon); a plain tint
-          // applies it to the base. The base is always drawn here — a translucent
-          // cover shows it through.
-          if (!cover) {
-            const filter = cssFilter(tint);
-            if (filter) ctx.filter = filter;
+          // `cover` replaces the icon, so it ignores any recolour. Otherwise:
+          // `tint` colourises the base to an exact colour (grayscale → multiply →
+          // re-mask the original alpha), else a `hue`/`filter` is a plain CSS
+          // filter. The base is always drawn — a translucent cover shows through.
+          const colorize = !cover && !tint.filter ? tint.tint : undefined;
+          if (colorize) {
+            ctx.filter = 'grayscale(1)';
+            ctx.drawImage(img, 0, 0, size, size);
+            ctx.filter = 'none';
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillStyle = colorize;
+            ctx.fillRect(0, 0, size, size);
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.drawImage(img, 0, 0, size, size);
+            ctx.globalCompositeOperation = 'source-over';
+          } else {
+            if (!cover) {
+              const filter = cssFilter(tint);
+              if (filter) ctx.filter = filter;
+            }
+            ctx.drawImage(img, 0, 0, size, size);
+            ctx.filter = 'none';
           }
-          ctx.drawImage(img, 0, 0, size, size);
-          ctx.filter = 'none';
           if (badge) {
             ctx.globalAlpha = alpha;
             drawBadge(ctx, size, badge);

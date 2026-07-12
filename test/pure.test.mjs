@@ -104,6 +104,41 @@ test('tintSvg is a no-op for empty/false tints and non-svg input', () => {
   assert.equal(tintSvg('not an svg', { hue: 90 }), 'not an svg');
 });
 
+test('tintSvg colourises to an exact colour via a duotone SVG filter', () => {
+  const svg = '<svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#00f"/></svg>';
+  const out = tintSvg(svg, { tint: '#22c55e' });
+  assert.match(out, /<filter[^>]*id="__favenv_c"[^>]*color-interpolation-filters="sRGB"/);
+  assert.match(out, /type="saturate" values="0"/, 'desaturates first');
+  assert.match(out, /flood-color="#22c55e"/);
+  assert.match(out, /mode="multiply"/);
+  assert.match(out, /operator="in"/, 're-masks the original alpha');
+  assert.match(out, /<g filter="url\(#__favenv_c\)">/);
+  assert.ok(out.includes('<rect'), 'keeps the original artwork');
+  assert.ok(!out.includes('__favenv{filter'), 'no CSS filter group for a tint');
+});
+
+test('tint precedence: explicit filter beats tint beats hue', () => {
+  const svg = '<svg viewBox="0 0 1 1"></svg>';
+  const filterWins = tintSvg(svg, { tint: '#f00', filter: 'saturate(2)' });
+  assert.match(filterWins, /filter:saturate\(2\)/);
+  assert.ok(!filterWins.includes('__favenv_c'), 'filter overrides tint');
+  const tintWins = tintSvg(svg, { tint: '#f00', hue: 90 });
+  assert.match(tintWins, /__favenv_c/);
+  assert.ok(!tintWins.includes('hue-rotate'), 'tint overrides hue');
+});
+
+test('tintSvg escapes the tint colour', () => {
+  const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', { tint: 'x"/><script>bad' });
+  assert.ok(!out.includes('<script>'), 'no raw markup leaks via flood-color');
+});
+
+test('tint composites with a badge', () => {
+  const svg = '<svg viewBox="0 0 64 64"><rect width="64" height="64"/></svg>';
+  const out = tintSvg(svg, { tint: '#0ea5e9', badge: '#f00' });
+  assert.match(out, /url\(#__favenv_c\)/, 'colourises the base');
+  assert.match(out, /<rect[^>]*fill="#f00"/, 'and draws the badge on top');
+});
+
 test('svgToDataUri percent-encodes', () => {
   assert.equal(svgToDataUri('<svg/>'), 'data:image/svg+xml,%3Csvg%2F%3E');
 });

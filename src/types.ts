@@ -3,8 +3,15 @@ export interface EnvTint {
   /** Hue rotation in degrees applied to the whole icon (e.g. `120`). */
   hue?: number;
   /**
+   * Colourise the icon to this exact colour (any CSS colour), preserving the
+   * artwork's shape and relative shading — a duotone from black up to `tint`.
+   * Unlike `hue` (a *relative* rotation) this sets an *absolute* colour, so a
+   * white logo becomes solid `tint`. Beats `hue`; an explicit `filter` beats it.
+   */
+  tint?: string;
+  /**
    * Explicit CSS filter string, e.g. `'hue-rotate(120deg) saturate(1.4)'`.
-   * Takes precedence over `hue` when both are set.
+   * Takes precedence over `hue` / `tint` when set.
    */
   filter?: string;
   /**

@@ -157,6 +157,27 @@ client-entry module (Vite/TanStack `src/main.ts`, or an Astro `<script>`).
 
 Source: src/tint.ts (`typeof document` guard), README "Runtime mode"
 
+### MEDIUM — Using `hue` when you want an exact colour
+
+Wrong:
+
+```js
+// trying to make dev green — but hue-rotate is relative to the base icon
+void envFavicon({ environments: { dev: { hue: 130 } } })
+```
+
+Correct:
+
+```js
+void envFavicon({ environments: { dev: { tint: '#22c55e' } } })
+```
+
+`hue` *rotates* the existing colours (the result depends on the base icon, and it
+barely moves white/black/grey). `tint` colourises to an *exact* colour while
+preserving shape and shading. For a flat block, use a text-less `cover` badge.
+
+Source: src/types.ts (EnvTint.tint), src/tint.ts (colorize path)
+
 ### MEDIUM — Multi-digit badge as a corner pill
 
 Wrong:

@@ -114,6 +114,22 @@ function svgCover([minX, minY, w, h]: [number, number, number, number], badge: B
 }
 
 /**
+ * An SVG `<filter>` that colourises the icon to `color`, mirroring the runtime
+ * canvas path: desaturate → multiply the flood colour → re-mask the original
+ * alpha. `color-interpolation-filters="sRGB"` keeps it visually matching canvas.
+ */
+function svgColorize(color: string): string {
+  return (
+    `<filter id="__favenv_c" color-interpolation-filters="sRGB">` +
+    `<feColorMatrix type="saturate" values="0" result="g"/>` +
+    `<feFlood flood-color="${escapeXml(color)}" result="f"/>` +
+    `<feBlend in="f" in2="g" mode="multiply" result="b"/>` +
+    `<feComposite in="b" in2="SourceGraphic" operator="in"/>` +
+    `</filter>`
+  );
+}
+
+/**
  * Return `svg` (an SVG *string*) with the environment's tint and/or badge baked
  * in — the form that survives being rendered as an `<img>` / favicon, with no
  * first-paint flash. The tint is a CSS `filter` on a wrapping group; the badge
@@ -126,8 +142,9 @@ function svgCover([minX, minY, w, h]: [number, number, number, number], badge: B
 export function tintSvg(svg: string, tint: EnvConfig): string {
   if (!tint) return svg;
   const filter = cssFilter(tint);
+  const colorize = tint.filter ? undefined : tint.tint; // explicit `filter` beats `tint`
   const badge = tint.badge ? normalizeBadge(tint.badge) : null;
-  if (!filter && !badge) return svg;
+  if (!filter && !colorize && !badge) return svg;
   const open = /<svg\b[^>]*>/i.exec(svg);
   if (!open) return svg;
   const close = svg.lastIndexOf('</svg>');
@@ -146,11 +163,19 @@ export function tintSvg(svg: string, tint: EnvConfig): string {
   const inner = svg.slice(openEnd, close);
   // No XML comments injected here — XML comments may not contain `--`, which
   // every `--custom-property` does, and that silently breaks favicon SVGs.
-  const style = filter ? `<style>.__favenv{filter:${filter}}</style>` : '';
-  const body = filter ? `<g class="__favenv">${inner}</g>` : inner;
+  // `tint` colourises via an SVG `<filter>`; else `hue`/`filter` is a CSS filter.
+  let defs = '';
+  let body = inner;
+  if (colorize) {
+    defs = svgColorize(colorize);
+    body = `<g filter="url(#__favenv_c)">${inner}</g>`;
+  } else if (filter) {
+    defs = `<style>.__favenv{filter:${filter}}</style>`;
+    body = `<g class="__favenv">${inner}</g>`;
+  }
   const viewBox = badge ? parseViewBox(open[0]) : null;
   const badgeSvg = badge && viewBox ? svgBadge(viewBox, badge) : '';
-  return `${svg.slice(0, openEnd)}${style}${body}${badgeSvg}${svg.slice(close)}`;
+  return `${svg.slice(0, openEnd)}${defs}${body}${badgeSvg}${svg.slice(close)}`;
 }
 
 /** Percent-encode an SVG string as a `data:` URI suitable for a favicon `href`. */
