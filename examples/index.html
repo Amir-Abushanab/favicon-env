@@ -139,11 +139,11 @@
     },
     {
       label: 'dev · hue', svg: base, tint: { hue: 130 }, opts: env('dev', { hue: 130 }),
-      source: `envFavicon({\n  environments: {\n    // rotate the hue — e.g. a green tint for dev builds\n    dev: { hue: 130 },\n  },\n})`,
+      source: `envFavicon({\n  environments: {\n    // rotate every hue 130° — a relative shift; shading + colours are kept\n    dev: { hue: 130 },\n  },\n})`,
     },
     {
       label: 'dev · tint', svg: base, tint: { tint: '#22c55e' }, opts: env('dev', { tint: '#22c55e' }),
-      source: `envFavicon({\n  environments: {\n    // colourise to an EXACT colour — keeps the artwork's shape + shading\n    dev: { tint: '#22c55e' },\n  },\n})`,
+      source: `envFavicon({\n  environments: {\n    // recolour to an EXACT colour (a duotone) — use tint, not hue, to get green\n    dev: { tint: '#22c55e' },\n  },\n})`,
     },
     {
       label: 'staging · dot', svg: base, tint: { badge: '#f59e0b' }, opts: env('staging', { badge: '#f59e0b' }),

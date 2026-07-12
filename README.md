@@ -2,7 +2,7 @@
 
 Tint your favicon per environment so you can tell instances apart at a glance — no more staring at three identical tabs wondering which one is production.
 
-![favicon-env — the same base icon per environment: prod, dev (hue-shift), staging (dot), a "#344" preview badge, a "#8790" URL-rule badge, and a custom image](docs/hero.png)
+![favicon-env — the same base icon per environment: prod, dev (hue-shift), dev (exact-colour tint), staging (dot), a "#344" preview cover, and a custom image](docs/hero.png)
 
 **[▶ Live, clickable demo](https://amir-abushanab.github.io/favicon-env/)**
 
@@ -129,12 +129,12 @@ envFavicon({
 
 ### Exact colours
 
-`hue` *rotates* the icon's colours, so the result depends on your base icon (and it barely moves white/black/grey). When you want a **specific** colour per environment, use `tint` — it colourises the icon to that exact colour while keeping its shape and shading (a duotone), so a white logo becomes solid `tint`:
+`hue` *rotates* every colour by a fixed angle — a relative shift that keeps the icon's shading **and** saturation, so it can't target a specific colour (and it barely moves white/black/grey). For a **specific** colour, use `tint`: it recolours the icon to that exact colour as a duotone — shape and shading kept, the original colours replaced — so a white logo becomes solid `tint`:
 
 ```js
 envFavicon({
   environments: {
-    dev:     { tint: '#22c55e' }, // exact green, artwork preserved
+    dev:     { tint: '#22c55e' }, // exact green (shape + shading kept)
     staging: { tint: '#f59e0b' }, // exact amber
   },
 })
