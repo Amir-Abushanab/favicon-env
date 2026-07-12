@@ -12,12 +12,29 @@ function parseRgb(color: string): [number, number, number] | null {
 }
 
 /**
- * Black or white — whichever reads better on `color` — by perceived luminance.
- * Falls back to white for colours it can't parse (named / `hsl()` / etc.).
+ * Perceived lightness (0–1) of `color` for the black/white text decision:
+ * rec601 luma for `#hex` / `rgb()`, or the `L` channel of CSS Color 4 colours —
+ * `oklch()`/`oklab()` (0–1) and `lab()`/`lch()` (0–100). `null` if unreadable.
+ */
+function lightness(color: string): number | null {
+  const rgb = parseRgb(color);
+  if (rgb) return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+  const lch = /^(okl(?:ch|ab)|l(?:ch|ab))\(\s*([\d.]+)(%?)/i.exec(color);
+  if (lch) {
+    const l = Number(lch[2]);
+    if (lch[3]) return l / 100; // a percentage L, in any of these spaces
+    return /^ok/i.test(lch[1]) ? l : l / 100; // oklab/oklch L is 0–1, lab/lch is 0–100
+  }
+  return null;
+}
+
+/**
+ * Black or white — whichever reads better on `color` — by perceived lightness.
+ * Handles `#hex`, `rgb()`, and CSS Color 4 `oklch()`/`oklab()`/`lab()`/`lch()`;
+ * falls back to white for anything else (named colours, `hsl()`, `color()`, …).
  */
 export function contrastColor(color: string): string {
-  const rgb = parseRgb(color);
-  if (!rgb) return '#fff';
-  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
-  return luminance > 0.6 ? '#000' : '#fff';
+  const l = lightness(color);
+  if (l == null) return '#fff';
+  return l > 0.6 ? '#000' : '#fff';
 }

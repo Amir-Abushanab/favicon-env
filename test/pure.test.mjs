@@ -224,6 +224,20 @@ test('badge text auto-contrasts against the badge colour (like runtime)', () => 
   );
 });
 
+test('badge text auto-contrasts against oklch / lab / lch colours (CSS Color 4)', () => {
+  const svg = '<svg viewBox="0 0 64 64"><rect/></svg>';
+  const text = (color) => tintSvg(svg, { badge: { text: '1', color } });
+  // oklch/oklab L is 0–1
+  assert.match(text('oklch(0.9 0.1 100)'), /<text[^>]*fill="#000"/, 'light oklch → black');
+  assert.match(text('oklch(0.35 0.1 260)'), /<text[^>]*fill="#fff"/, 'dark oklch → white');
+  assert.match(text('oklab(88% -0.1 0.1)'), /<text[^>]*fill="#000"/, 'percentage L too');
+  // lab/lch L is 0–100
+  assert.match(text('lab(85 20 40)'), /<text[^>]*fill="#000"/, 'light lab → black');
+  assert.match(text('lch(30 50 150)'), /<text[^>]*fill="#fff"/, 'dark lch → white');
+  // an unhandled space (display-p3) falls back to white without crashing
+  assert.match(text('color(display-p3 0.2 0.3 0.4)'), /<text[^>]*fill="#fff"/);
+});
+
 test('badge opacity fades the group', () => {
   const out = tintSvg('<svg viewBox="0 0 64 64"><rect/></svg>', {
     badge: { text: '9', color: '#f00', opacity: 0.5 },

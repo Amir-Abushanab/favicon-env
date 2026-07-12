@@ -142,6 +142,8 @@ envFavicon({
 
 Want a flat single-colour block instead of a duotone? Use a text-less `cover` badge (`{ badge: { color: '#22c55e', shape: 'cover' } }`). Want a different icon entirely? Use `src`.
 
+Any colour (`tint`, `badge.color`, `textColor`) can be **any CSS colour** — including CSS Color 4 spaces like `oklch()`, `oklab()`, `lab()`, `lch()`, and `color(display-p3 …)` on browsers that support them (they degrade gracefully elsewhere). Badge text auto-contrasts against `oklch`/`oklab`/`lab`/`lch` colours too.
+
 ### Auto mode
 
 Don't want to name environments at all? Derive a **stable, unique hue from `location.host`**, so every origin *and port* automatically gets its own colour — perfect for telling several dev servers apart:
