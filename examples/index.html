@@ -43,6 +43,28 @@
   a.link svg { width: 15px; height: 15px; fill: currentColor; }
   a.link:hover { border-color: var(--accent); color: #fff; }
 
+  /* "Copy for your agent" — same chrome as the GitHub/npm links (border, radius,
+     padding); keeps the 4 agent glyphs + fan-out hover from
+     foldgradient.mattrothenberg.com (they splay outward on hover). */
+  .agent-copy { appearance: none; cursor: pointer; font-family: inherit; font-size: 13.5px; line-height: 1.6;
+    color: var(--fg); display: inline-flex; align-items: center; gap: 7px; background: transparent;
+    border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px;
+    transition: border-color .15s, color .15s, transform .05s; }
+  .agent-copy:hover { border-color: var(--accent); color: #fff; }
+  .agent-copy:active { transform: translateY(1px); }
+  .agent-copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .agent-copy.copied .agent-label { color: #8ec2ff; }
+  .agent-icons { display: inline-flex; align-items: center; gap: 6px; opacity: .92; }
+  .agent-icons svg { display: block; width: 16px; height: 16px; transform-origin: center;
+    will-change: transform; transition: transform .4s cubic-bezier(.32, .72, 0, 1); }
+  .agent-icons svg:nth-child(1) { transform: rotate(-6deg); }
+  .agent-icons svg:nth-child(4) { transform: rotate(6deg); }
+  .agent-copy:hover .agent-icons svg:nth-child(1) { transform: rotate(-12deg) translateX(-3px); }
+  .agent-copy:hover .agent-icons svg:nth-child(2) { transform: rotate(6deg) translate(-1px, -1px) scale(1.1); }
+  .agent-copy:hover .agent-icons svg:nth-child(3) { transform: rotate(-6deg) translate(1px, 2px) scale(1.1); }
+  .agent-copy:hover .agent-icons svg:nth-child(4) { transform: rotate(12deg) translateX(3px); }
+  @media (prefers-reduced-motion: reduce) { .agent-copy, .agent-icons svg { transition: none; } }
+
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px; margin-top: 34px; }
   .tabbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .tab { display: inline-flex; align-items: center; gap: 9px; background: #151830;
@@ -93,6 +115,15 @@
       <span class="install"><span class="p">$</span> pnpm add favicon-env</span>
       <a class="link" href="https://github.com/amir-abushanab/favicon-env"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>GitHub</a>
       <a class="link" href="https://www.npmjs.com/package/favicon-env"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></svg>npm</a>
+      <button class="agent-copy" id="agentCopy" type="button">
+        <span class="agent-icons" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"><path d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z"/></svg>
+          <svg width="16" height="16" viewBox="82.65 82.65 634.71 634.71" fill="currentColor" fill-rule="evenodd"><path d="M165.29 165.29H517.36V400H400V517.36H282.65V634.72H165.29ZM282.65 282.65V400H400V282.65Z"/><path d="M517.36 400H634.72V634.72H517.36Z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M16 6H8v12h8V6zm4 16H4V2h16v20z"/></svg>
+        </span>
+        <span class="agent-label" aria-live="polite">Copy for your agent</span>
+      </button>
     </div>
   </header>
 
@@ -239,6 +270,40 @@
       await navigator.clipboard.writeText(currentSource);
       copyBtn.textContent = 'Copied';
       setTimeout(() => (copyBtn.textContent = 'Copy'), 1200);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  });
+
+  // "Copy for your agent" — copy the library's own skill doc (prefixed with a
+  // task line) so it drops straight into a coding agent. Read live from
+  // skills/core/SKILL.md — the exact file the published agent skill ships, so the
+  // button and the skill never drift. The YAML frontmatter (tooling metadata) is
+  // stripped; on any fetch error it falls back to the README link.
+  const AGENT_TASK =
+    'Set up favicon-env in my project so dev, staging, and prod each render a distinct ' +
+    'favicon and I can tell identical tabs apart at a glance.\n\n' +
+    'Install the `favicon-env` package and call `envFavicon(...)` once at a client entry ' +
+    'point. Use the reference below — favicon-env’s own skill doc — to pick runtime ' +
+    '(canvas) vs. build-time (SSR) mode and get the config right.\n\n---\n\n';
+  const agentTextPromise = fetch('../skills/core/SKILL.md')
+    .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+    .then((md) => AGENT_TASK + md.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n+/, '').trim() + '\n')
+    .catch(() => AGENT_TASK + 'Reference: https://github.com/amir-abushanab/favicon-env#readme\n');
+
+  const agentBtn = document.getElementById('agentCopy');
+  const agentLabel = agentBtn.querySelector('.agent-label');
+  let agentResetT;
+  agentBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(await agentTextPromise);
+      agentLabel.textContent = 'Copied ✓';
+      agentBtn.classList.add('copied');
+      clearTimeout(agentResetT);
+      agentResetT = setTimeout(() => {
+        agentLabel.textContent = 'Copy for your agent';
+        agentBtn.classList.remove('copied');
+      }, 1400);
     } catch {
       /* clipboard unavailable — ignore */
     }

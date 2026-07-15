@@ -30,15 +30,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      # Mirror the repo layout so the demo's `../dist/index.js` import resolves:
+      # Mirror the repo layout so the demo's runtime imports/fetches resolve:
       #   /            → redirects to /examples/
       #   /examples/   → the demo (imports ../dist → /dist)
       #   /dist/       → the freshly built package
+      #   /skills/     → the agent skill doc the "Copy for your agent" button fetches
       - name: Assemble site
         run: |
-          mkdir -p _site/dist _site/examples
+          mkdir -p _site/dist _site/examples _site/skills/core
           cp -r dist/. _site/dist/
           cp examples/index.html _site/examples/index.html
+          cp skills/core/SKILL.md _site/skills/core/SKILL.md
           printf '<!doctype html><meta http-equiv="refresh" content="0; url=./examples/">\n' > _site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
