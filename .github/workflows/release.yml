@@ -29,13 +29,31 @@ jobs:
           node-version: 24 # OIDC trusted publishing needs Node > 22
           cache: pnpm
 
-      # Trusted publishing needs npm >= 11.5.1 — guarantee it regardless of the
-      # version bundled with Node.
-      - run: npm install -g npm@latest
-
+      # Node 24 already bundles an npm that supports OIDC trusted publishing
+      # (>= 11.5.1), so we deliberately do NOT `npm install -g npm@latest`: that
+      # pulls npm 12, whose changed output breaks changesets 2.31.0's
+      # already-published detection and crashes the release on no-op pushes.
       - run: pnpm install --frozen-lockfile
 
+      # Every push to main runs this job. With no pending changesets, changesets/
+      # action takes its "publish" path and re-runs `changeset publish` for the
+      # CURRENT version; when that version is already on npm it should skip, but
+      # changesets 2.31.0 crashes (isAlreadyPublishedError) instead. Decide up front
+      # and skip in that case. Real releases still run: pending changesets open the
+      # Version PR, and a merged Version PR carries a not-yet-published version.
+      - name: Is there anything to release?
+        id: rel
+        run: |
+          if ls .changeset/*.md 2>/dev/null | grep -qv '/README\.md$'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"   # pending changesets -> open/refresh the Version PR
+          elif node -e "const p=require('./package.json'); fetch('https://registry.npmjs.org/'+p.name+'/'+p.version).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+            echo "run=false" >> "$GITHUB_OUTPUT"  # current version already on npm -> nothing to do
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"   # new version not yet on npm -> publish it
+          fi
+
       - name: Version PR or publish
+        if: steps.rel.outputs.run == 'true'
         uses: changesets/action@v1
         with:
           version: pnpm run version # changeset version (bump + CHANGELOG)
