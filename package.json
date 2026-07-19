@@ -49,7 +49,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.build.json",
     "dev": "node scripts/serve.mjs --watch",
     "hero": "pnpm build && node scripts/hero.mjs",
     "typecheck": "tsc --noEmit",
@@ -81,6 +81,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
     "@playwright/test": "^1.61.1",
+    "@swc/core": "^1.15.43",
     "@tanstack/intent": "^0.3.5",
     "dependency-cruiser": "^18.0.0",
     "knip": "^6.26.0",
@@ -89,7 +90,7 @@
     "publint": "^0.3.21",
     "simple-git-hooks": "^2.13.1",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm check"

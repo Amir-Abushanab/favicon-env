@@ -1,0 +1,18 @@
+{
+  // Declaration-only emit for the published types. tsup builds the JS; native
+  // `tsc` (TypeScript 7's Go port) emits the .d.ts, because tsup's JS-API-based
+  // dts backend (rollup-plugin-dts) can't consume the TS 7 compiler API yet.
+  // Run via `tsc -p tsconfig.build.json` after tsup (see the `build` script).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  // Only the two public entries (+ their transitive imports); the IIFE `global`
+  // entry ships no types, so it is intentionally excluded.
+  "include": ["src/index.ts", "src/ssr.ts"]
+}
