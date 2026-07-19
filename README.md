@@ -8,7 +8,7 @@ Tint your favicon per environment so you can tell instances apart at a glance �
 
 - **Runtime mode** — tint an existing SVG, PNG, or ICO in the browser.
 - **Build-time mode** — bake changes into an SVG during build or SSR.
-- **Zero dependencies.** ~2.3 kB min+gzip.
+- **Zero dependencies.** ~2.3 kB min+gzip — and [tree-shakes to zero bytes in prod](#zero-bytes-in-prod).
 
 ## Install
 
