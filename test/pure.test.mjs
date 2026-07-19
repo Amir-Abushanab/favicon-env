@@ -132,6 +132,46 @@ test('tintSvg escapes the tint colour', () => {
   assert.ok(!out.includes('<script>'), 'no raw markup leaks via flood-color');
 });
 
+// --- invert ---
+
+test('tintSvg inverts the icon via a CSS filter', () => {
+  const svg = '<svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#00f"/></svg>';
+  const out = tintSvg(svg, { invert: true });
+  assert.match(out, /filter:invert\(1\)/);
+  assert.match(out, /class="__favenv"/);
+  assert.ok(out.includes('<rect'), 'keeps the original artwork');
+});
+
+test('invert accepts a 0–1 amount', () => {
+  assert.match(tintSvg('<svg viewBox="0 0 1 1"></svg>', { invert: 0.85 }), /filter:invert\(0\.85\)/);
+});
+
+test('invert composes with hue in a single filter', () => {
+  const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', { hue: 130, invert: true });
+  assert.match(out, /filter:hue-rotate\(130deg\) invert\(1\)/);
+});
+
+test('invert false / 0 is a no-op', () => {
+  const svg = '<svg viewBox="0 0 1 1"></svg>';
+  assert.equal(tintSvg(svg, { invert: false }), svg);
+  assert.equal(tintSvg(svg, { invert: 0 }), svg);
+});
+
+test('invert precedence: explicit filter beats it, tint (duotone) beats it', () => {
+  const svg = '<svg viewBox="0 0 1 1"></svg>';
+  assert.match(tintSvg(svg, { invert: true, filter: 'saturate(2)' }), /filter:saturate\(2\)/);
+  const tintWins = tintSvg(svg, { invert: true, tint: '#22c55e' });
+  assert.match(tintWins, /__favenv_c/);
+  assert.ok(!tintWins.includes('invert('), 'tint overrides invert');
+});
+
+test('invert composites with a badge', () => {
+  const svg = '<svg viewBox="0 0 64 64"><rect width="64" height="64"/></svg>';
+  const out = tintSvg(svg, { invert: true, badge: '#f00' });
+  assert.match(out, /filter:invert\(1\)/);
+  assert.match(out, /<rect[^>]*fill="#f00"/, 'draws the badge on top');
+});
+
 test('tint composites with a badge', () => {
   const svg = '<svg viewBox="0 0 64 64"><rect width="64" height="64"/></svg>';
   const out = tintSvg(svg, { tint: '#0ea5e9', badge: '#f00' });

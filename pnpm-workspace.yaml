@@ -1,9 +1,12 @@
 # Single-package repo, but pnpm 11 reads install settings from this file (not the
 # package.json "pnpm" field), so it exists purely to carry the settings below.
 
+packages:
+  - 'test/frameworks/*'
+
 # Supply-chain defense: skip dependency versions younger than N minutes
 # (7 days = 10080). Applies to every install, including transitive deps.
-# Requires pnpm >= 10.16.0 (we pin 11.9.0 via packageManager).
+# Requires pnpm >= 10.16.0 (we pin 11.12.0 via packageManager).
 minimumReleaseAge: 10080
 # Some registry packages omit publish-time metadata; bypass the cooldown for
 # those rather than failing the install.
@@ -13,7 +16,11 @@ minimumReleaseAgeIgnoreMissingTime: true
 # bundles with esbuild, whose postinstall downloads its native binary; without
 # this, that build is skipped and `pnpm build` breaks.
 allowBuilds:
+  '@parcel/watcher': true
   esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  sharp: true
   # simple-git-hooks: declined here — the hook is installed via the `prepare`
   # script instead, which is package-manager-agnostic.
   simple-git-hooks: false

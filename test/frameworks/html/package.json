@@ -1,0 +1,8 @@
+{
+  "name": "@favicon-env-test/html",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "favicon-env": "workspace:*"
+  }
+}

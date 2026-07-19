@@ -1,7 +1,42 @@
 {
   "$schema": "./node_modules/knip/schema.json",
-  // Entries (index/ssr/global) are auto-detected from package.json `exports` and
-  // tsup.config.ts. The project scope is `src/` only — the tests import the built
-  // `dist/` output (the published artifact), not `src/`, so they're out of scope.
-  "project": ["src/**/*.ts"]
+  "workspaces": {
+    ".": {
+      // Entries (index/ssr/global) are auto-detected from package.json `exports`
+      // and tsup.config.ts. Tests import the built package, not the source tree.
+      "project": ["src/**/*.ts"]
+    },
+    "test/frameworks/next": {
+      "entry": ["app/**/*.tsx"],
+      "project": ["**/*.{ts,tsx}"]
+    },
+    "test/frameworks/tanstack-start": {
+      "entry": ["src/client.tsx", "src/router.tsx", "src/routes/**/*.tsx"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "test/frameworks/astro": {
+      "entry": ["src/**/*.astro"],
+      "project": ["src/**/*.astro"]
+    },
+    "test/frameworks/sveltekit": {
+      "entry": ["src/routes/**/*.svelte"],
+      "project": ["src/**/*.{ts,svelte}"]
+    },
+    "test/frameworks/solid-start": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "test/frameworks/angular": {
+      "entry": ["src/types.d.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "test/frameworks/nuxt": {
+      "entry": ["app/**/*.ts"],
+      "project": ["app/**/*.{ts,vue}"],
+      "ignoreDependencies": ["vue", "vue-router"]
+    },
+    "test/frameworks/html": {
+      "entry": ["server.mjs"]
+    }
+  }
 }

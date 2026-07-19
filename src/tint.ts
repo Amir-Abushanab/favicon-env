@@ -227,7 +227,11 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
 
   // Plain image swap: a custom `src` with nothing to composite skips the canvas.
   const needsCanvas =
-    tint.hue != null || Boolean(tint.filter) || Boolean(tint.tint) || Boolean(badge);
+    tint.hue != null ||
+    Boolean(tint.invert) ||
+    Boolean(tint.filter) ||
+    Boolean(tint.tint) ||
+    Boolean(badge);
   if (!needsCanvas) {
     if (tint.src) applyFavicon(tint.src, inferType(tint.src));
     return Promise.resolve();
@@ -250,8 +254,8 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
         if (ctx) {
           // `cover` replaces the icon, so it ignores any recolour. Otherwise:
           // `tint` colourises the base to an exact colour (grayscale → multiply →
-          // re-mask the original alpha), else a `hue`/`filter` is a plain CSS
-          // filter. The base is always drawn — a translucent cover shows through.
+          // re-mask the original alpha), else a `hue`/`invert`/`filter` is a plain
+          // CSS filter. The base is always drawn — a translucent cover shows through.
           const colorize = !cover && !tint.filter ? tint.tint : undefined;
           if (colorize) {
             ctx.filter = 'grayscale(1)';

@@ -1,0 +1,25 @@
+---
+const appEnv = import.meta.env.PUBLIC_APP_ENV ?? 'prod'
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>favicon-env Astro integration</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <main data-app-env={appEnv}>Astro fixture</main>
+    <script>
+      const appEnv = import.meta.env.PUBLIC_APP_ENV ?? 'prod'
+      if (appEnv === 'dev' || appEnv === 'staging') {
+        void import('favicon-env').then(({ envFavicon }) =>
+          envFavicon({
+            ...(appEnv === 'dev'
+              ? { auto: { offset: 35 } }
+              : { environments: { staging: { badge: '#f97316' } }, detect: () => appEnv }),
+          }),
+        )
+      }
+    </script>
+  </body>
+</html>

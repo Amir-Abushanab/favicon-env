@@ -1,31 +1,39 @@
 {
   "name": "favicon-env",
   "version": "0.2.0",
-  "type": "module",
   "description": "Tint your favicon per environment (dev/staging/prod) so you can tell instances apart at a glance. Runtime canvas mode + build-time SVG mode. Zero dependencies.",
-  "license": "MIT",
-  "author": "Amir Abushanab",
   "keywords": [
-    "favicon",
-    "environment",
-    "env",
-    "dev",
-    "staging",
-    "hue",
-    "tint",
     "canvas",
+    "dev",
     "developer-experience",
     "dx",
-    "tanstack-intent"
+    "env",
+    "environment",
+    "favicon",
+    "hue",
+    "staging",
+    "tanstack-intent",
+    "tint"
   ],
+  "homepage": "https://github.com/Amir-Abushanab/favicon-env#readme",
+  "bugs": "https://github.com/Amir-Abushanab/favicon-env/issues",
+  "license": "MIT",
+  "author": "Amir Abushanab",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Amir-Abushanab/favicon-env.git"
   },
-  "homepage": "https://github.com/Amir-Abushanab/favicon-env#readme",
-  "bugs": "https://github.com/Amir-Abushanab/favicon-env/issues",
-  "packageManager": "pnpm@11.9.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "skills",
+    "!skills/_artifacts"
+  ],
+  "type": "module",
   "sideEffects": false,
+  "unpkg": "./dist/favicon-env.global.js",
+  "jsdelivr": "./dist/favicon-env.global.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -37,18 +45,13 @@
     },
     "./global": "./dist/favicon-env.global.js"
   },
-  "unpkg": "./dist/favicon-env.global.js",
-  "jsdelivr": "./dist/favicon-env.global.js",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "skills",
-    "!skills/_artifacts"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "node scripts/serve.mjs --watch",
+    "hero": "pnpm build && node scripts/hero.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src",
     "format": "oxfmt src",
@@ -57,8 +60,16 @@
     "check": "oxfmt --check src && oxlint src && knip && depcruise src",
     "publint": "publint --strict",
     "intent:validate": "intent validate skills",
+    "intent:stale": "intent stale skills",
     "pretest": "pnpm build",
-    "test": "node --test",
+    "test": "node --test test/pure.test.mjs test/skill.test.mjs",
+    "test:skill": "node --test test/skill.test.mjs",
+    "test:frameworks": "node test/frameworks/run.mjs",
+    "test:frameworks:firefox": "node test/frameworks/run.mjs --browser firefox",
+    "test:frameworks:webkit": "node test/frameworks/run.mjs --browser webkit",
+    "test:frameworks:browsers": "pnpm test:frameworks && pnpm test:frameworks:firefox && pnpm test:frameworks:webkit",
+    "dev:frameworks": "node test/frameworks/serve-all.mjs",
+    "test:all": "pnpm test && pnpm test:frameworks",
     "ncu": "pnpm dlx npm-check-updates",
     "changeset": "changeset",
     "version": "changeset version",
@@ -67,14 +78,9 @@
     "prepublishOnly": "pnpm build && pnpm run publint && pnpm run intent:validate",
     "prepare": "simple-git-hooks"
   },
-  "publishConfig": {
-    "access": "public"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "pnpm check"
-  },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
+    "@playwright/test": "^1.61.1",
     "@tanstack/intent": "^0.3.5",
     "dependency-cruiser": "^18.0.0",
     "knip": "^6.24.0",
@@ -84,5 +90,9 @@
     "simple-git-hooks": "^2.13.1",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3"
-  }
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm check"
+  },
+  "packageManager": "pnpm@11.12.0"
 }

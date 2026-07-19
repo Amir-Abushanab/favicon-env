@@ -1,0 +1,13 @@
+{
+  "name": "@favicon-env-test/astro",
+  "private": true,
+  "scripts": {
+    "dev": "node dev.mjs",
+    "build": "astro build",
+    "start": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^7.0.7",
+    "favicon-env": "workspace:*"
+  }
+}

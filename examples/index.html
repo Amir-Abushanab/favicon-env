@@ -35,13 +35,27 @@
   h1 code { font: inherit; }
   .tagline { color: var(--muted); font-size: 16px; margin: 0 auto; max-width: 30em; }
   .cta { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 22px 0 4px; }
-  .install { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px; }
+  .install { display: inline-flex; align-items: center; gap: 7px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 8px 9px 8px 14px; }
   .install .p { color: var(--dim); }
+  .install-copy { appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--dim);
+    display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px;
+    transition: color .15s, background .15s; }
+  .install-copy:hover { color: var(--fg); background: rgba(255, 255, 255, 0.06); }
+  .install-copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .install-copy svg { grid-area: 1 / 1; width: 15px; height: 15px; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: opacity .18s ease, transform .18s cubic-bezier(.2, .8, .2, 1.5); }
+  .install-copy .ic-check { opacity: 0; transform: scale(.4); stroke: #34d399; }
+  .install-copy.copied .ic-copy { opacity: 0; transform: scale(.4); }
+  .install-copy.copied .ic-check { opacity: 1; transform: scale(1); }
+  @media (prefers-reduced-motion: reduce) { .install-copy svg { transition: opacity .12s; transform: none !important; } }
   a.link { display: inline-flex; align-items: center; gap: 7px; color: var(--fg); text-decoration: none;
     border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px; font-size: 13.5px; }
   a.link svg { width: 15px; height: 15px; fill: currentColor; }
   a.link:hover { border-color: var(--accent); color: #fff; }
+  a.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* "Copy for your agent" — same chrome as the GitHub/npm links (border, radius,
      padding); keeps the 4 agent glyphs + fan-out hover from
@@ -66,13 +80,33 @@
   @media (prefers-reduced-motion: reduce) { .agent-copy, .agent-icons svg { transition: none; } }
 
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px; margin-top: 34px; }
-  .tabbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .tab { display: inline-flex; align-items: center; gap: 9px; background: #151830;
-    border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13.5px; color: #cfd6f5; }
-  .tab img { width: 16px; height: 16px; display: block; }
-  .tabbar .hint { color: var(--dim); font-size: 13px; }
-  .lead { color: var(--muted); font-size: 13.5px; margin: 16px 0 16px; }
+  .lead { color: var(--muted); font-size: 13.5px; margin: 4px 0 14px; text-align: center; }
   .lead code { color: #cfd6f5; }
+
+  /* Framework picker. Uses the customizable <select> (Chrome/Edge 135+) so options
+     carry their framework's logo; elsewhere it falls back to a native text dropdown. */
+  .controls { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+  .fwlabel { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .fwselect, .fwselect::picker(select) { appearance: base-select; }
+  .fwselect { font: inherit; font-size: 13.5px; color: var(--fg); display: inline-flex; align-items: center; gap: 8px;
+    background-color: #151830; border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px 6px 11px;
+    cursor: pointer; transition: border-color .15s; }
+  .fwselect:hover { border-color: var(--accent); }
+  .fwselect:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fwselect::picker-icon { color: var(--dim); transition: transform .2s ease; }
+  .fwselect:open::picker-icon { transform: rotate(180deg); }
+  .fwselect::picker(select) { background: #12152b; border: 1px solid var(--line); border-radius: 11px; padding: 6px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55); width: max-content; min-width: anchor-size(width); }
+  .fwselect option { display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 10px; border-radius: 8px;
+    color: #cdd3ef; cursor: pointer; transition: background .12s; }
+  .fwselect option:hover, .fwselect option:focus { background: rgba(255, 255, 255, 0.055); }
+  .fwselect option:checked { background: #7c9cff1f; color: #fff; }
+  .fwselect option::checkmark { display: none; }
+  /* display:block drops the img's inline baseline gap so it centres with the label */
+  .opt-icon { display: block; width: 20px; height: 20px; border-radius: 5px; flex: none; }
+  .opt-label { line-height: 1.2; }
+  .fwselect selectedcontent { display: inline-flex; align-items: center; gap: 9px; }
+  .fwselect selectedcontent .opt-icon { width: 18px; height: 18px; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
   .card { appearance: none; font: inherit; text-align: center; cursor: pointer; color: var(--fg);
@@ -82,16 +116,27 @@
   .card:hover { border-color: #38406e; background: rgba(255, 255, 255, 0.03); }
   .card:active { transform: translateY(1px); }
   .card.active { border-color: var(--accent); background: #7c9cff14; box-shadow: inset 0 0 0 1px var(--accent); }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .card img { width: 66px; height: 66px; }
   .card .lbl { font-size: 12.5px; font-weight: 650; }
 
   /* Code example for the selected card. */
   .code { position: relative; margin-top: 16px; background: #0c0e1c; border: 1px solid var(--line); border-radius: 12px; }
-  .code pre { margin: 0; padding: 16px 18px; overflow-x: auto; }
+  .code pre { margin: 0; padding: 16px 18px; overflow: auto; max-height: 460px;
+    scrollbar-width: thin; scrollbar-color: #2b3252 transparent; }
+  .code pre::-webkit-scrollbar { width: 9px; height: 9px; }
+  .code pre::-webkit-scrollbar-track { background: transparent; }
+  .code pre::-webkit-scrollbar-thumb { background: #2b3252; border-radius: 8px; border: 2px solid #0c0e1c; }
+  .code pre::-webkit-scrollbar-thumb:hover { background: #3a416e; }
+  .code pre::-webkit-scrollbar-corner { background: transparent; }
+  .code pre:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
   .code code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.65; white-space: pre; color: #cfd6f5; }
   .copy { position: absolute; top: 9px; right: 9px; font: inherit; font-size: 11.5px; color: var(--muted);
     background: #1b1e33; border: 1px solid var(--line); border-radius: 7px; padding: 4px 10px; cursor: pointer; }
   .copy:hover { color: #fff; border-color: var(--accent); }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .t-comment { color: #6b7394; font-style: italic; }
   .t-str { color: #9ece8a; }
   .t-num, .t-bool { color: #e0a16a; }
@@ -99,6 +144,7 @@
   .t-key { color: #7cc5ff; }
   .t-fn { color: #e5c07b; }
   .t-regex { color: #e06c75; }
+  .t-tag { color: #56b6c2; }
   .t-punct { color: #8b93b8; }
 
   footer { color: var(--dim); font-size: 13px; margin-top: 36px; text-align: center; }
@@ -112,7 +158,7 @@
     <h1><code>favicon-env</code></h1>
     <p class="tagline">Tint your favicon per environment, so you can tell instances apart at a glance.</p>
     <div class="cta">
-      <span class="install"><span class="p">$</span> pnpm add favicon-env</span>
+      <span class="install"><span class="p">$</span> pnpm add favicon-env<button class="install-copy" id="installCopy" type="button" aria-label="Copy install command"><svg class="ic-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="ic-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button></span>
       <a class="link" href="https://github.com/amir-abushanab/favicon-env"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>GitHub</a>
       <a class="link" href="https://www.npmjs.com/package/favicon-env"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></svg>npm</a>
       <button class="agent-copy" id="agentCopy" type="button">
@@ -128,16 +174,20 @@
   </header>
 
   <section class="panel">
-    <div class="tabbar">
-      <span class="tab"><img id="tabfav" alt="" /> favicon-env — demo</span>
-      <span class="hint">← this favicon (and your real browser tab) updates when you pick a type</span>
+    <p class="lead">Pick your framework, then click a card — the base icon, your live browser tab, and the copy-paste snippet below all update.</p>
+    <div class="controls">
+      <label class="fwlabel" for="framework">Framework</label>
+      <select class="fwselect" id="framework">
+        <button><selectedcontent></selectedcontent></button>
+        <!-- icon-bearing options are built from FRAMEWORKS in the script below -->
+      </select>
     </div>
-    <p class="lead">Click a card to apply it — its <code>envFavicon(...)</code> config is shown below.</p>
-    <div class="grid" id="grid"></div>
+    <div class="grid" id="grid" role="radiogroup" aria-label="Favicon tint style (arrow keys to move)"></div>
     <div class="code">
       <button class="copy" id="copy" type="button">Copy</button>
-      <pre><code id="src"></code></pre>
+      <pre tabindex="0" aria-label="Setup code — scrollable"><code id="src"></code></pre>
     </div>
+    <p id="status" class="sr-only" role="status" aria-live="polite"></p>
   </section>
 
   <footer>
@@ -153,68 +203,414 @@
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8def"/><stop offset=".55" stop-color="#9b6bff"/><stop offset="1" stop-color="#ff6ec7"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#cg)"/><path d="M18 29 19 11 32 24Z" fill="#fff"/><path d="M46 29 45 11 32 24Z" fill="#fff"/><ellipse cx="32" cy="38.5" rx="17" ry="15" fill="#fff"/><path d="M22 24.5 22.5 15.5 29.5 24Z" fill="#ff9ec4"/><path d="M42 24.5 41.5 15.5 34.5 24Z" fill="#ff9ec4"/><circle cx="22.5" cy="41.5" r="3" fill="#ff9ec4" opacity=".5"/><circle cx="41.5" cy="41.5" r="3" fill="#ff9ec4" opacity=".5"/><circle cx="26" cy="38" r="2.7" fill="#3a2f66"/><circle cx="38" cy="38" r="2.7" fill="#3a2f66"/><path d="M29.5 43.5 34.5 43.5 32 46.8Z" fill="#ff6b9d"/></svg>';
   const alt =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="dg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset=".55" stop-color="#22c55e"/><stop offset="1" stop-color="#059669"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#dg)"/><ellipse cx="18" cy="33" rx="7.5" ry="13" fill="#e8b98a"/><ellipse cx="46" cy="33" rx="7.5" ry="13" fill="#e8b98a"/><ellipse cx="32" cy="32" rx="15" ry="14" fill="#fff"/><ellipse cx="32" cy="44" rx="8.5" ry="6.5" fill="#fff"/><circle cx="26" cy="31" r="2.6" fill="#4b3a2a"/><circle cx="38" cy="31" r="2.6" fill="#4b3a2a"/><ellipse cx="32" cy="41.5" rx="3.2" ry="2.5" fill="#4b3a2a"/><rect x="30" y="45.5" width="4" height="3.6" rx="1.6" fill="#ff8fa3"/></svg>';
-  const baseUrl = svgToDataUri(base);
-  const altUrl = svgToDataUri(alt);
+  // `base` is the cat, `alt` the dog (defined above). The framework dropdown swaps
+  // the *base* icon for a stand-in logo tile, so every card tints that instead.
+
+  // --- framework logo tiles: each project's real favicon / brand mark, sourced
+  // from its site. Next.js and TanStack ship raster-only favicons, so those two are
+  // faithful vector stand-ins. Each sits on a rounded tile so it reads on the dark UI.
+  const LOGOS = {
+    next: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(6.4 6.4) scale(0.284)"><circle cx="90" cy="90" r="90" fill="#000"/><path d="M149.508 157.52L69.142 54H54V125.97H66.114V69.384L139.999 164.845C143.333 162.614 146.509 160.165 149.508 157.52Z" fill="#fff"/><rect x="115" y="54" width="12" height="72" fill="#fff"/></g></svg>',
+    'tanstack-start': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(8.32 8.427) scale(0.071)"><path d="m305.114318.62443771c8.717817-1.14462121 17.926803-.36545135 26.712694-.36545135 32.548987 0 64.505987 5.05339923 95.64868 14.63098274 39.74418 12.2236582 76.762804 31.7666864 109.435876 57.477568 40.046637 31.5132839 73.228974 72.8472109 94.520714 119.2362609 39.836383 86.790386 39.544267 191.973146-1.268422 278.398081-26.388695 55.880442-68.724007 102.650458-119.964986 136.75724-41.808813 27.828603-90.706831 44.862601-140.45707 50.89341-63.325458 7.677926-131.784923-3.541603-188.712259-32.729444-106.868873-54.795293-179.52309291-165.076271-180.9604082-285.932068-.27660564-23.300971.08616998-46.74071 4.69884909-69.814998 7.51316071-37.57857 20.61272131-73.903917 40.28618971-106.877282 21.2814003-35.670293 48.7704861-67.1473767 81.6882804-92.5255597 38.602429-29.7610135 83.467691-51.1674988 130.978372-62.05777669 11.473831-2.62966514 22.9946-4.0869914 34.57273-5.4964306l3.658171-.44480576c3.050084-.37153079 6.104217-.74794222 9.162589-1.14972654zm-110.555861 549.44131429c-14.716752 1.577863-30.238964 4.25635-42.869928 12.522173 2.84343.683658 6.102369.004954 9.068638 0 7.124652-.011559 14.317732-.279903 21.434964.032202 17.817402.781913 36.381729 3.63214 53.58741 8.350042 22.029372 6.040631 41.432961 17.928687 62.656049 25.945156 22.389644 8.456554 44.67706 11.084675 68.427 11.084675 11.96813 0 23.845573-.035504 35.450133-3.302696-6.056202-3.225083-14.72582-2.619864-21.434964-3.963236-14.556814-2.915455-28.868774-6.474936-42.869928-11.470264-10.304996-3.676672-20.230803-8.214291-30.11097-12.848661l-6.348531-2.985046c-9.1705-4.309263-18.363277-8.560752-27.845391-12.142608-24.932161-9.418465-52.560181-14.071964-79.144482-11.221737zm22.259385-62.614168c-29.163917 0-58.660076 5.137344-84.915434 18.369597-6.361238 3.206092-12.407546 7.02566-18.137277 11.258891-1.746125 1.290529-4.841829 2.948483-5.487351 5.191839-.654591 2.275558 1.685942 4.182039 3.014086 5.637703 6.562396-3.497556 12.797498-7.199878 19.78612-9.855246 45.19892-17.169893 99.992458-13.570779 145.098218 2.172348 22.494346 7.851335 43.219483 19.592421 65.129314 28.800338 24.503461 10.297807 49.53043 16.975034 75.846795 20.399104 31.04195 4.037546 66.433549.7654 94.808495-13.242161 9.970556-4.921843 23.814245-12.422267 28.030337-23.320339-5.207047.454947-9.892236 2.685918-14.83959 4.224149-7.866632 2.445646-15.827248 4.51974-23.908229 6.138887-27.388113 5.486604-56.512458 6.619429-84.091013 1.639788-25.991939-4.693152-50.142596-14.119246-74.179513-24.03502l-3.068058-1.268177c-2.045137-.846788-4.089983-1.695816-6.135603-2.544467l-3.069142-1.272366c-12.279956-5.085721-24.606928-10.110797-37.210937-14.51024-24.485325-8.546552-50.726667-13.784628-76.671218-13.784628zm51.114145-447.9909432c-34.959602 7.7225298-66.276908 22.7605319-96.457338 41.7180089-17.521434 11.0054099-34.281927 22.2799893-49.465301 36.4444283-22.5792616 21.065423-39.8360564 46.668751-54.8866988 73.411509-15.507372 27.55357-25.4498976 59.665686-30.2554517 90.824149-4.7140432 30.568106-5.4906485 62.70747-.0906864 93.301172 6.7503648 38.248526 19.5989769 74.140579 39.8896436 107.337631 6.8187918-3.184625 11.659796-10.445603 17.3128555-15.336896 11.4149428-9.875888 23.3995608-19.029311 36.2745548-26.928535 4.765981-2.923712 9.662222-5.194315 14.83959-7.275014 1.953055-.785216 5.14604-1.502727 6.06527-3.647828 1.460876-3.406732-1.240754-9.335897-1.704904-12.865654-1.324845-10.095517-2.124534-20.362774-1.874735-30.549941.725492-29.668947 6.269727-59.751557 16.825623-87.521453 7.954845-20.924233 20.10682-39.922168 34.502872-56.971512 4.884699-5.785498 10.077731-11.170545 15.437296-16.512656 3.167428-3.157378 7.098271-5.858983 9.068639-9.908915-10.336599.006606-20.674847 2.987289-30.503603 6.013385-21.174447 6.519522-41.801477 16.19312-59.358362 29.841512-8.008432 6.226409-13.873368 14.387371-21.44733 20.939921-2.32322 2.010516-6.484901 4.704691-9.695199 3.187928-4.8500728-2.29042-4.1014979-11.835213-4.6571581-16.222019-2.1369011-16.873476 4.2548401-38.216325 12.3778671-52.843142 13.039878-23.479694 37.150915-43.528712 65.467327-42.82854 12.228647.302197 22.934587 4.551115 34.625711 7.324555-2.964621-4.211764-6.939158-7.28162-10.717482-10.733763-9.257431-8.459031-19.382979-16.184864-30.503603-22.028985-4.474136-2.350694-9.291232-3.77911-14.015169-5.506421-2.375159-.867783-5.36616-2.062533-6.259834-4.702213-1.654614-4.888817 7.148561-9.416813 10.381943-11.478522 12.499882-7.969406 27.826705-14.525258 42.869928-14.894334 23.509209-.577147 46.479246 12.467678 56.162903 34.665926 3.404469 7.803171 4.411273 16.054969 5.079109 24.382907l.121749 1.56229.174325 2.345587c.01913.260708.038244.521433.057403.782164l.11601 1.56437.120128 1.563971c7.38352-6.019164 12.576553-14.876995 19.78612-21.323859 16.861073-15.07846 39.936636-21.7722 61.831627-14.984333 19.786945 6.133107 36.984382 19.788105 47.105807 37.959541 2.648042 4.754231 10.035685 16.373942 4.698379 21.109183-4.177345 3.707277-9.475079.818243-13.880788-.719162-3.33605-1.16376-6.782939-1.90214-10.241828-2.585698l-1.887262-.369639c-.629089-.122886-1.257979-.246187-1.886079-.372129-11.980496-2.401886-25.91652-2.152533-37.923398-.041284-7.762754 1.364839-15.349083 4.127545-23.083807 5.271929v1.651348c21.149714.175043 41.608563 12.240618 52.043268 30.549941 4.323267 7.585468 6.482428 16.267431 8.138691 24.770223 2.047864 10.50918.608423 21.958802-2.263037 32.201289-.962925 3.433979-2.710699 9.255807-6.817143 10.046802-2.902789.558982-5.36781-2.330878-7.024898-4.279468-4.343878-5.10762-8.475879-9.96341-13.573278-14.374161-12.895604-11.157333-26.530715-21.449361-40.396663-31.373138-7.362086-5.269452-15.425755-12.12007-23.908229-15.340199 2.385052 5.745041 4.721463 11.086326 5.532694 17.339156 2.385876 18.392716-5.314223 35.704625-16.87179 49.540445-3.526876 4.222498-7.29943 8.475545-11.744712 11.755948-1.843407 1.360711-4.156734 3.137561-6.595373 2.752797-7.645687-1.207961-8.555849-12.73272-9.728176-18.637115-3.970415-19.998652-2.375984-39.861068 3.132802-59.448534-4.901187 2.485279-8.443727 7.923994-11.521293 12.385111-6.770975 9.816439-12.645804 20.199291-16.858599 31.375615-16.777806 44.519521-16.616219 96.664142 5.118834 139.523233 2.427098 4.786433 6.110614 4.144058 10.894733 4.144058.720854 0 1.44257-.004515 2.164851-.010924l2.168232-.022283c4.338648-.045438 8.686803-.064635 12.979772.508795 2.227588.297243 5.320818.032202 7.084256 1.673642 2.111344 1.966755.986008 5.338808.4996 7.758859-1.358647 6.765574-1.812904 12.914369-1.812904 19.816178 9.02412-1.398692 11.525415-15.866153 14.724172-23.118874 3.624982-8.216283 7.313444-16.440823 10.667192-24.770223 1.648843-4.093692 3.854171-8.671229 3.275427-13.210785-.649644-5.10184-4.335633-10.510831-6.904531-14.862134-4.86244-8.234447-10.389363-16.70834-13.969002-25.595896-2.861567-7.104926-.197036-15.983399 7.871579-18.521521 4.450228-1.400344 9.198073 1.345848 12.094266 4.562675 6.07269 6.74328 9.992815 16.777697 14.401823 24.692609l34.394873 61.925556c2.920926 5.243856 5.848447 10.481933 8.836976 15.687808 1.165732 2.031158 2.352075 5.167068 4.740424 6.0332 2.127008.77118 5.033095-.325315 7.148561-.748886 5.492297-1.099798 10.97635-2.287117 16.488434-3.28288 6.605266-1.193099 16.673928-.969342 21.434964-6.129805-6.963066-2.205375-15.011895-2.074919-22.259386-1.577863-4.352947.298894-9.178287 1.856116-13.178381-.686135-5.953149-3.783239-9.910373-12.522173-13.552668-18.377854-8.980425-14.439388-17.441465-29.095929-26.041008-43.760726l-1.376261-2.335014-2.765943-4.665258c-1.380597-2.334387-2.750786-4.67476-4.079753-7.036188-1.02723-1.826391-2.549937-4.233231-1.078344-6.24705 1.545791-2.114476 4.91472-2.239146 7.956473-2.243117l.603351.000261c1.195428.001526 2.315572.002427 3.222811-.11692 12.27399-1.615019 24.718635-2.952611 37.098976-2.952611-.963749-3.352237-3.719791-7.141255-2.838484-10.73046 1.972017-8.030506 13.526287-10.543033 18.899867-4.780653 3.60767 3.868283 5.704174 9.192229 8.051303 13.859765 3.097352 6.162006 6.624228 12.118418 9.940876 18.16483 5.805578 10.585967 12.146205 20.881297 18.116667 31.375615.49237.865561.999687 1.726685 1.512269 2.587098l.771613 1.290552c2.577138 4.303168 5.164895 8.635123 6.553094 13.461506-20.735854-.9487-36.30176-25.018751-45.343193-41.283704-.721369 2.604176.450959 4.928448 1.388326 7.431066 1.948109 5.197619 4.276275 10.147535 7.20627 14.862134 4.184765 6.732546 8.982075 13.665732 15.313633 18.553722 11.236043 8.673707 26.05255 8.721596 39.572241 7.794364 8.669619-.595311 19.50252-4.542034 28.030338-1.864372 8.513803 2.673532 11.940924 12.063098 6.884745 19.276187-3.787393 5.403211-8.842747 7.443452-15.128962 8.257566 4.445282 9.53571 10.268996 18.385285 14.490036 28.072919 1.758491 4.035895 3.59118 10.22102 7.8048 12.350433 2.805507 1.416857 6.824562.09743 9.85761.034678-3.043765-8.053625-8.742992-14.887729-11.541904-23.118874 8.533589.390544 16.786875 4.843404 24.732651 7.685374 15.630376 5.590144 31.063836 11.701854 46.475333 17.86913l7.112077 2.848685c6.338978 2.538947 12.71588 5.052299 18.961699 7.812528 2.285297 1.009799 5.449427 3.370401 7.975455 1.917215 2.061054-1.186494 3.394144-4.015253 4.665403-5.931643 3.55573-5.361927 6.775921-10.928622 9.965609-16.513481 12.774414-22.36586 22.143967-46.872692 28.402976-71.833646 20.645168-82.323009 2.934117-173.156241-46.677107-241.922507-19.061454-26.420745-43.033164-49.262193-69.46165-68.1783861-66.13923-47.336721-152.911262-66.294198-232.486917-48.7172481zm135.205158 410.5292842c-17.532977 4.570931-35.601827 8.714164-53.58741 11.040088 2.365265 8.052799 8.145286 15.885969 12.376218 23.118874 1.635653 2.796558 3.3859 6.541816 6.618457 7.755557 3.651364 1.370619 8.063669-.853747 11.508927-1.975838-1.595256-4.364513-4.279573-8.292245-6.476657-12.385112-.905215-1.687677-2.305907-3.685809-1.559805-5.68972 1.410585-3.786541 7.266452-3.563609 10.509727-4.221671 8.54678-1.733916 17.004522-3.898008 25.557073-5.611281 3.150939-.631641 7.538512-2.342438 10.705115-1.285575 2.371037.791232 3.800147 2.744743 5.152304 4.781948l.606196.918752c.80912 1.222827 1.637246 2.41754 2.671212 3.351165 3.457625 3.121874 8.628398 3.60159 13.017619 4.453686-2.678546-6.027421-7.130424-11.301001-9.984571-17.339156-1.659561-3.511592-3.023155-8.677834-6.656381-10.707341-5.005064-2.795733-15.341663 2.461334-20.458024 3.795624zm-110.472507-40.151706c-.825246 10.467897-4.036369 18.984725-9.068639 28.072919 5.76683.729896 11.649079.989984 17.312856 2.39363 4.244947 1.051908 8.156828 3.058296 12.366325 4.211763-2.250671-6.157877-6.426367-11.651913-9.661398-17.339156-3.266358-5.740912-6.189758-12.717032-10.949144-17.339156z" transform="translate(.9778)"/></g></svg>',
+    astro: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(10.88 10.88) scale(0.33)"><g fill="#1b2030"> <path d="M47.7 107.1c-5.5-5-7.2-15.7-4.9-23.4 4 4.9 9.6 6.4 15.4 7.3 8.9 1.3 17.6.8 25.9-3.2l2.8-1.7a18 18 0 0 1-7.2 20l-5.5 3.8c-5.6 3.8-7.2 8.2-5 14.7l.2.7a14 14 0 0 1-6.6-5.6 15.8 15.8 0 0 1-2.6-8.6c0-1.5 0-3-.2-4.5-.5-3.7-2.2-5.3-5.5-5.4-3.3-.1-5.9 2-6.6 5.2l-.2.7Z" /> <path d="M16 82.4s16.5-8 33-8l12.4-38.3c.5-2 1.8-3.2 3.3-3.2 1.6 0 3 1.3 3.4 3.2l12.4 38.3c19.6 0 33 8 33 8l-28-76c-.8-2.3-2.2-3.7-4-3.7H48c-1.8 0-3.1 1.4-4 3.7l-28 76Z" /> </g> <path fill="url(#a)" d="M47.7 107.1c-5.5-5-7.2-15.7-4.9-23.4 4 4.9 9.6 6.4 15.4 7.3 8.9 1.3 17.6.8 25.9-3.2l2.8-1.7a18 18 0 0 1-7.2 20l-5.5 3.8c-5.6 3.8-7.2 8.2-5 14.7l.2.7a14 14 0 0 1-6.6-5.6 15.8 15.8 0 0 1-2.6-8.6c0-1.5 0-3-.2-4.5-.5-3.7-2.2-5.3-5.5-5.4-3.3-.1-5.9 2-6.6 5.2l-.2.7Z" /> <defs> <linearGradient id="a" x1="64.7" x2="77.4" y1="119.2" y2="77.4" gradientUnits="userSpaceOnUse"> <stop stop-color="#D83333" /> <stop offset="1" stop-color="#F041FF" /> </linearGradient> </defs> </g></svg>',
+    sveltekit: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(13.81 10.24) scale(0.34)"><path d="M94.1566,22.8189c-10.4-14.8851-30.94-19.2971-45.7914-9.8348L22.2825,29.6078A29.9234,29.9234,0,0,0,8.7639,49.6506a31.5136,31.5136,0,0,0,3.1076,20.2318A30.0061,30.0061,0,0,0,7.3953,81.0653a31.8886,31.8886,0,0,0,5.4473,24.1157c10.4022,14.8865,30.9423,19.2966,45.7914,9.8348L84.7167,98.3921A29.9177,29.9177,0,0,0,98.2353,78.3493,31.5263,31.5263,0,0,0,95.13,58.117a30,30,0,0,0,4.4743-11.1824,31.88,31.88,0,0,0-5.4473-24.1157" style="fill:#ff3e00"/><path d="M45.8171,106.5815A20.7182,20.7182,0,0,1,23.58,98.3389a19.1739,19.1739,0,0,1-3.2766-14.5025,18.1886,18.1886,0,0,1,.6233-2.4357l.4912-1.4978,1.3363.9815a33.6443,33.6443,0,0,0,10.203,5.0978l.9694.2941-.0893.9675a5.8474,5.8474,0,0,0,1.052,3.8781,6.2389,6.2389,0,0,0,6.6952,2.485,5.7449,5.7449,0,0,0,1.6021-.7041L69.27,76.281a5.4306,5.4306,0,0,0,2.4506-3.631,5.7948,5.7948,0,0,0-.9875-4.3712,6.2436,6.2436,0,0,0-6.6978-2.4864,5.7427,5.7427,0,0,0-1.6.7036l-9.9532,6.3449a19.0329,19.0329,0,0,1-5.2965,2.3259,20.7181,20.7181,0,0,1-22.2368-8.2427,19.1725,19.1725,0,0,1-3.2766-14.5024,17.9885,17.9885,0,0,1,8.13-12.0513L55.8833,23.7472a19.0038,19.0038,0,0,1,5.3-2.3287A20.7182,20.7182,0,0,1,83.42,29.6611a19.1739,19.1739,0,0,1,3.2766,14.5025,18.4,18.4,0,0,1-.6233,2.4357l-.4912,1.4978-1.3356-.98a33.6175,33.6175,0,0,0-10.2037-5.1l-.9694-.2942.0893-.9675a5.8588,5.8588,0,0,0-1.052-3.878,6.2389,6.2389,0,0,0-6.6952-2.485,5.7449,5.7449,0,0,0-1.6021.7041L37.73,51.719a5.4218,5.4218,0,0,0-2.4487,3.63,5.7862,5.7862,0,0,0,.9856,4.3717,6.2437,6.2437,0,0,0,6.6978,2.4864,5.7652,5.7652,0,0,0,1.602-.7041l9.9519-6.3425a18.978,18.978,0,0,1,5.2959-2.3278,20.7181,20.7181,0,0,1,22.2368,8.2427,19.1725,19.1725,0,0,1,3.2766,14.5024,17.9977,17.9977,0,0,1-8.13,12.0532L51.1167,104.2528a19.0038,19.0038,0,0,1-5.3,2.3287" style="fill:#fff"/></g></svg>',
+    'solid-start': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(11.52 12.84) scale(0.247)"><defs><linearGradient id="a" gradientUnits="userSpaceOnUse" x1="27.5" y1="3" x2="152" y2="63.5"><stop offset=".1" stop-color="#76b3e1"/><stop offset=".3" stop-color="#dcf2fd"/><stop offset="1" stop-color="#76b3e1"/></linearGradient><linearGradient id="b" gradientUnits="userSpaceOnUse" x1="95.8" y1="32.6" x2="74" y2="105.2"><stop offset="0" stop-color="#76b3e1"/><stop offset=".5" stop-color="#4377bb"/><stop offset="1" stop-color="#1f3b77"/></linearGradient><linearGradient id="c" gradientUnits="userSpaceOnUse" x1="18.4" y1="64.2" x2="144.3" y2="149.8"><stop offset="0" stop-color="#315aa9"/><stop offset=".5" stop-color="#518ac8"/><stop offset="1" stop-color="#315aa9"/></linearGradient><linearGradient id="d" gradientUnits="userSpaceOnUse" x1="75.2" y1="74.5" x2="24.4" y2="260.8"><stop offset="0" stop-color="#4377bb"/><stop offset=".5" stop-color="#1a336b"/><stop offset="1" stop-color="#1a336b"/></linearGradient></defs><path d="M163 35S110-4 69 5l-3 1c-6 2-11 5-14 9l-2 3-15 26 26 5c11 7 25 10 38 7l46 9 18-30z" fill="#76b3e1"/><path d="M163 35S110-4 69 5l-3 1c-6 2-11 5-14 9l-2 3-15 26 26 5c11 7 25 10 38 7l46 9 18-30z" opacity=".3" fill="url(#a)"/><path d="M52 35l-4 1c-17 5-22 21-13 35 10 13 31 20 48 15l62-21S92 26 52 35z" fill="#518ac8"/><path d="M52 35l-4 1c-17 5-22 21-13 35 10 13 31 20 48 15l62-21S92 26 52 35z" opacity=".3" fill="url(#b)"/><path d="M134 80a45 45 0 00-48-15L24 85 4 120l112 19 20-36c4-7 3-15-2-23z" fill="url(#c)"/><path d="M114 115a45 45 0 00-48-15L4 120s53 40 94 30l3-1c17-5 23-21 13-34z" fill="url(#d)"/></g></svg>',
+    angular: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(9.6 9.6) scale(0.179)"><style type="text/css"> .st0{fill:#DD0031;} .st1{fill:#C3002F;} .st2{fill:#FFFFFF;} </style> <g> <polygon class="st0" points="125,30 125,30 125,30 31.9,63.2 46.1,186.3 125,230 125,230 125,230 203.9,186.3 218.1,63.2 "/> <polygon class="st1" points="125,30 125,52.2 125,52.1 125,153.4 125,153.4 125,230 125,230 203.9,186.3 218.1,63.2 125,30 "/> <path class="st2" d="M125,52.1L66.8,182.6h0h21.7h0l11.7-29.2h49.4l11.7,29.2h0h21.7h0L125,52.1L125,52.1L125,52.1L125,52.1 L125,52.1z M142,135.4H108l17-40.9L142,135.4z"/> </g></g></svg>',
+    nuxt: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#020420"/><g transform="translate(4.693 4.693) scale(0.107)"><path d="M281.44 397.667H438.32C443.326 397.667 448.118 395.908 452.453 393.427C456.789 390.946 461.258 387.831 463.76 383.533C466.262 379.236 468.002 374.36 468 369.399C467.998 364.437 466.266 359.563 463.76 355.268L357.76 172.947C355.258 168.65 352.201 165.534 347.867 163.053C343.532 160.573 337.325 158.813 332.32 158.813C327.315 158.813 322.521 160.573 318.187 163.053C313.852 165.534 310.795 168.65 308.293 172.947L281.44 219.587L227.733 129.13C225.229 124.834 222.176 120.307 217.84 117.827C213.504 115.346 208.713 115 203.707 115C198.701 115 193.909 115.346 189.573 117.827C185.238 120.307 180.771 124.834 178.267 129.13L46.8267 355.268C44.3208 359.563 44.0022 364.437 44 369.399C43.9978 374.36 44.3246 379.235 46.8267 383.533C49.3288 387.83 53.7979 390.946 58.1333 393.427C62.4688 395.908 67.2603 397.667 72.2667 397.667H171.2C210.401 397.667 238.934 380.082 258.827 346.787L306.88 263.4L332.32 219.587L410.053 352.44H306.88L281.44 397.667ZM169.787 352.44H100.533L203.707 174.36L256 263.4L221.361 323.784C208.151 345.387 193.089 352.44 169.787 352.44Z" fill="#00DC82"/></g></svg>',
+    html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><g transform="translate(5.011 -0.323) scale(0.106)"><polygon fill="#E44D26" points="107.644,470.877 74.633,100.62 437.367,100.62 404.321,470.819 255.778,512 "/> <polygon fill="#F16529" points="256,480.523 376.03,447.246 404.27,130.894 256,130.894 "/> <polygon fill="#EBEBEB" points="256,268.217 195.91,268.217 191.76,221.716 256,221.716 256,176.305 255.843,176.305 142.132,176.305 143.219,188.488 154.38,313.627 256,313.627"/> <polygon fill="#EBEBEB" points="256,386.153 255.801,386.206 205.227,372.55 201.994,336.333 177.419,336.333 156.409,336.333 162.771,407.634 255.791,433.457 256,433.399"/> <polygon fill="#FFFFFF" points="255.843,268.217 255.843,313.627 311.761,313.627 306.49,372.521 255.843,386.191 255.843,433.435 348.937,407.634 349.62,399.962 360.291,280.411 361.399,268.217 349.162,268.217"/> <polygon fill="#FFFFFF" points="255.843,176.305 255.843,204.509 255.843,221.605 255.843,221.716 365.385,221.716 365.385,221.716 365.531,221.716 366.442,211.509 368.511,188.488 369.597,176.305"/></g></svg>',
+  };
+
+  // --- code snippets: mirror the README's per-framework runtime setup, with the
+  // selected card's config injected. `reindent` shifts a block's continuation
+  // lines under a wrapped call; `indentLines` shifts every line.
+  const reindent = (code, pad) =>
+    code.split('\n').map((line, i) => (i === 0 || line === '' ? line : pad + line)).join('\n');
+  const indentLines = (code, pad) =>
+    code.split('\n').map((line) => (line === '' ? line : pad + line)).join('\n');
+
+  // The `{ … }` argument for envFavicon: the card's config body, plus a
+  // `detect: () => <var>` for an env-based card when the framework wires detection.
+  const configArg = (card, detectVar) =>
+    `{\n${card.body}${detectVar && card.envs.length ? `\n  detect: () => ${detectVar},` : ''}\n}`;
+  // Env guards derived from the card's env keys (so prod stays a no-op).
+  const guardNeg = (envs, v) => envs.map((e) => `${v} !== '${e}'`).join(' && ');
+  const guardPos = (envs, v) => envs.map((e) => `${v} === '${e}'`).join(' || ');
+  const earlyGuard = (card, v) => (card.envs.length ? `if (${guardNeg(card.envs, v)}) return;\n\n` : '');
+
+  // The README's "re-apply on <head> mutation" block, config injected. `loader`
+  // switches to Angular's indirect (prod-replaceable) import.
+  const reactiveBlock = (config, loader) => `let queued = false;
+const apply = async () => {
+  queued = false;
+${
+    loader
+      ? '  const envFavicon = await loadEnvFavicon();\n  if (!envFavicon) return;'
+      : "  const { envFavicon } = await import('favicon-env');"
+  }
+  await envFavicon(${reindent(config, '  ')});
+};
+const schedule = () => {
+  if (queued) return;
+  queued = true;
+  queueMicrotask(apply);
+};
+const observer = new MutationObserver(() => {
+  if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+    schedule();
+  }
+});
+observer.observe(document.head, {
+  childList: true,
+  subtree: true,
+  attributes: true,
+  attributeFilter: ['href', 'rel'],
+});
+schedule();`;
+
+  // Each framework reproduces its README setup — the dynamic-import guard (so the
+  // runtime is dropped from prod) and the head observer — with the card's config
+  // injected. (`<\/script>` is escaped so this inline module isn't cut short.)
+  const FRAMEWORKS = {
+    none: {
+      label: 'None / vanilla JS', logo: null,
+      wrap: (card) => `envFavicon(${configArg(card, null)})`,
+    },
+    next: {
+      label: 'Next.js', logo: LOGOS.next,
+      wrap: (card) => `// app/favicon-env.tsx — a client component, rendered once from the root layout
+'use client'
+import { useEffect } from 'react'
+
+const appEnv = process.env.NEXT_PUBLIC_APP_ENV ?? 'prod'
+
+export function FaviconEnv() {
+  useEffect(() => {
+${indentLines(earlyGuard(card, 'appEnv') + reactiveBlock(configArg(card, 'appEnv')), '    ')}
+    return () => observer.disconnect()
+  }, [])
+  return null
+}
+
+// app/layout.tsx — render <FaviconEnv /> once inside <body>
+import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
+import { FaviconEnv } from './favicon-env'
+
+export const metadata: Metadata = {
+  icons: { icon: '/favicon.svg' },
+}
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <FaviconEnv />
+        {children}
+      </body>
+    </html>
+  )
+}`,
+    },
+    'tanstack-start': {
+      label: 'TanStack Start', logo: LOGOS['tanstack-start'],
+      wrap: (card) => {
+        const block = reactiveBlock(configArg(card, 'appEnv'));
+        const gated = card.envs.length
+          ? `if (${guardPos(card.envs, 'appEnv')}) {\n${indentLines(block, '  ')}\n}`
+          : block;
+        return `// src/client.tsx — the optional client entry
+import { StartClient } from '@tanstack/react-start/client'
+import { StrictMode } from 'react'
+import { hydrateRoot } from 'react-dom/client'
+
+const appEnv = import.meta.env.VITE_APP_ENV ?? 'prod'
+
+${gated}
+
+hydrateRoot(
+  document,
+  <StrictMode>
+    <StartClient />
+  </StrictMode>,
+)`;
+      },
+    },
+    astro: {
+      label: 'Astro', logo: LOGOS.astro,
+      wrap: (card) => {
+        const call = `void import('favicon-env').then(({ envFavicon }) =>\n  envFavicon(${reindent(configArg(card, 'appEnv'), '  ')}),\n)`;
+        const gated = card.envs.length
+          ? `if (${guardPos(card.envs, 'appEnv')}) {\n${indentLines(call, '  ')}\n}`
+          : call;
+        return `---
+// src/layouts/Layout.astro
+---
+<html lang="en">
+  <head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <slot />
+    <script>
+      const appEnv = import.meta.env.PUBLIC_APP_ENV ?? 'prod'
+${indentLines(gated, '      ')}
+    <\/script>
+  </body>
+</html>`;
+      },
+    },
+    sveltekit: {
+      label: 'SvelteKit', logo: LOGOS.sveltekit,
+      wrap: (card) => `<!-- src/routes/+layout.svelte -->
+<script lang="ts">
+  import { onMount } from 'svelte'
+
+  let { children } = $props()
+
+  onMount(() => {
+    const appEnv = __FAVICON_ENV_APP_ENV__
+${indentLines(earlyGuard(card, 'appEnv') + reactiveBlock(configArg(card, 'appEnv')), '    ')}
+    return () => observer.disconnect()
+  })
+<\/script>
+
+<svelte:head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</svelte:head>
+
+{@render children()}
+
+// vite.config.ts — a build constant Vite folds to a literal, so it can drop the import in prod
+export default defineConfig({
+  define: { __FAVICON_ENV_APP_ENV__: JSON.stringify(process.env.PUBLIC_APP_ENV ?? 'prod') },
+  plugins: [sveltekit()],
+})
+
+// src/app.d.ts
+declare const __FAVICON_ENV_APP_ENV__: string`,
+    },
+    'solid-start': {
+      label: 'SolidStart', logo: LOGOS['solid-start'],
+      wrap: (card) => `// src/app.tsx — keep the hook in the app root so it survives route changes
+import { Link, MetaProvider } from '@solidjs/meta'
+import { Router } from '@solidjs/router'
+import { FileRoutes } from '@solidjs/start/router'
+import { onCleanup, onMount, Suspense } from 'solid-js'
+
+export default function App() {
+  onMount(() => {
+    const appEnv = import.meta.env.VITE_APP_ENV ?? 'prod'
+${indentLines(earlyGuard(card, 'appEnv') + reactiveBlock(configArg(card, 'appEnv')), '    ')}
+    onCleanup(() => observer.disconnect())
+  })
+
+  return (
+    <Router root={(props) => (
+      <MetaProvider>
+        <Link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <Suspense>{props.children}</Suspense>
+      </MetaProvider>
+    )}>
+      <FileRoutes />
+    </Router>
+  )
+}`,
+    },
+    angular: {
+      label: 'Angular', logo: LOGOS.angular,
+      wrap: (card) => `// src/app/app.ts — the standalone root component
+import { Component, DestroyRef, afterNextRender, inject } from '@angular/core'
+import { loadEnvFavicon } from './favicon-env-loader'
+
+declare const APP_ENV: string
+
+@Component({ selector: 'app-root', template: '<main>App</main>' })
+export class App {
+  private readonly destroyRef = inject(DestroyRef)
+
+  constructor() {
+    afterNextRender(() => {
+${indentLines(earlyGuard(card, 'APP_ENV') + reactiveBlock(configArg(card, 'APP_ENV'), true), '      ')}
+      this.destroyRef.onDestroy(() => observer.disconnect())
+    })
+  }
+}
+
+// src/app/favicon-env-loader.ts
+export async function loadEnvFavicon() {
+  return (await import('favicon-env')).envFavicon
+}
+
+// src/app/favicon-env-loader.prod.ts — swapped in for prod, so no chunk is emitted
+import type { EnvFaviconOptions } from 'favicon-env'
+
+type EnvFavicon = (options?: EnvFaviconOptions) => Promise<void>
+
+export async function loadEnvFavicon(): Promise<EnvFavicon | null> {
+  return null
+}
+
+// angular.json (production configuration)
+{
+  "define": { "APP_ENV": "'prod'" },
+  "fileReplacements": [
+    { "replace": "src/app/favicon-env-loader.ts", "with": "src/app/favicon-env-loader.prod.ts" }
+  ]
+}`,
+    },
+    nuxt: {
+      label: 'Nuxt', logo: LOGOS.nuxt,
+      wrap: (card) => `// app/plugins/favicon-env.client.ts
+export default defineNuxtPlugin(() => {
+  const appEnv = __FAVICON_ENV_APP_ENV__
+${indentLines(earlyGuard(card, 'appEnv') + reactiveBlock(configArg(card, 'appEnv')), '  ')}
+})
+
+// nuxt.config.ts — the build constant lets Vite remove the import from prod output
+export default defineNuxtConfig({
+  vite: { define: { __FAVICON_ENV_APP_ENV__: JSON.stringify(process.env.NUXT_PUBLIC_APP_ENV ?? 'prod') } },
+})
+
+// app/types.d.ts
+declare const __FAVICON_ENV_APP_ENV__: string`,
+    },
+    html: {
+      label: 'Plain HTML', logo: LOGOS.html,
+      wrap: (card) => {
+        const config = configArg(card, null);
+        return `<!-- Native ESM through an ESM-aware CDN -->
+<link rel="icon" href="/favicon.svg" />
+<script type="module">
+  import { envFavicon } from 'https://esm.sh/favicon-env'
+  void envFavicon(${reindent(config, '  ')})
+<\/script>
+
+<!-- …or the classic global build (also exposes window.faviconEnv) -->
+<script src="https://unpkg.com/favicon-env/dist/favicon-env.global.js"><\/script>
+<script>
+  void faviconEnv.envFavicon(${reindent(config, '  ')})
+<\/script>
+
+<!-- For a zero-byte prod page, omit these scripts when the app env is prod. -->`;
+      },
+    },
+  };
+
   const ruleCfg = [{ match: /:(\d+)$/, badge: { text: '#$1', color: '#0ea5e9', shape: 'cover' } }];
   const url = new URL(location.href);
   const env = (name, tint) => ({ environments: { [name]: tint }, detect: () => name });
 
-  // Each entry: how the icon looks (svg + tint, for the card preview via the SSR
-  // helper), the exact envFavicon() options applied on click, and an idiomatic
-  // `source` snippet shown (syntax-highlighted) in the code panel.
+  let fw = 'none';
+  const frameworkBase = () => FRAMEWORKS[fw].logo ?? base; // the icon every card tints
+  const frameworkBaseUrl = () => svgToDataUri(frameworkBase());
+  // The "custom image" swap target: the dog while vanilla, the cat once a framework
+  // logo owns the base (so the cat becomes the alternative image).
+  const altImage = () => (fw === 'none' ? alt : base);
+
+  // Each entry: the tint applied on click (also drives the card preview via the SSR
+  // helper), the envFavicon() options, and a `config` body wrapped per framework.
   const types = [
     {
-      label: 'prod', svg: base, tint: false,
+      label: 'prod', tint: false, envs: ['dev', 'staging'],
       opts: { environments: { dev: { hue: 130 }, staging: { badge: '#f59e0b' } }, detect: () => 'prod' },
-      source: `envFavicon({\n  environments: {\n    dev: { hue: 130 },\n    staging: { badge: '#f59e0b' },\n    // prod isn't listed, so it keeps its real favicon (the default)\n  },\n})`,
+      body: `  environments: {
+    dev: { hue: 130 },
+    staging: { badge: '#f59e0b' },
+    // prod isn't listed, so it keeps its real favicon (the default)
+  },`,
     },
     {
-      label: 'dev · hue', svg: base, tint: { hue: 130 }, opts: env('dev', { hue: 130 }),
-      source: `envFavicon({\n  environments: {\n    // rotate every hue 130° — a relative shift; shading + colours are kept\n    dev: { hue: 130 },\n  },\n})`,
+      label: 'dev · hue', tint: { hue: 130 }, opts: env('dev', { hue: 130 }), envs: ['dev'],
+      body: `  environments: {
+    // rotate every hue 130° — a relative shift; shading + colours are kept
+    dev: { hue: 130 },
+  },`,
     },
     {
-      label: 'dev · tint', svg: base, tint: { tint: '#22c55e' }, opts: env('dev', { tint: '#22c55e' }),
-      source: `envFavicon({\n  environments: {\n    // recolour to an EXACT colour (a duotone) — use tint, not hue, to get green\n    dev: { tint: '#22c55e' },\n  },\n})`,
+      label: 'dev · tint', tint: { tint: '#22c55e' }, opts: env('dev', { tint: '#22c55e' }), envs: ['dev'],
+      body: `  environments: {
+    // recolour to an EXACT colour (a duotone) — use tint, not hue, to get green
+    dev: { tint: '#22c55e' },
+  },`,
     },
     {
-      label: 'staging · dot', svg: base, tint: { badge: '#f59e0b' }, opts: env('staging', { badge: '#f59e0b' }),
-      source: `envFavicon({\n  environments: {\n    // a small corner dot in this colour\n    staging: { badge: '#f59e0b' },\n  },\n})`,
+      label: 'dev · invert', tint: { invert: true }, opts: env('dev', { invert: true }), envs: ['dev'],
+      body: `  environments: {
+    // flip every colour — an instant, high-contrast variant
+    dev: { invert: true },
+  },`,
     },
     {
-      label: 'preview · number', svg: base,
+      label: 'staging · dot', tint: { badge: '#f59e0b' }, opts: env('staging', { badge: '#f59e0b' }), envs: ['staging'],
+      body: `  environments: {
+    // a small corner dot in this colour
+    staging: { badge: '#f59e0b' },
+  },`,
+    },
+    {
+      label: 'preview · number', envs: ['preview'],
       tint: { badge: { text: '#344', color: '#8b5cf6', shape: 'cover', opacity: 0.8 } },
       opts: env('preview', { badge: { text: '#344', color: '#8b5cf6', shape: 'cover', opacity: 0.8 } }),
-      source: `envFavicon({\n  environments: {\n    preview: {\n      // cover fills the icon; opacity lets the logo show through\n      badge: {\n        text: '#344', shape: 'cover',\n        color: '#8b5cf6', opacity: 0.8,\n      },\n    },\n  },\n})`,
+      body: `  environments: {
+    preview: {
+      // cover fills the icon; opacity lets the logo show through
+      badge: {
+        text: '#344', shape: 'cover',
+        color: '#8b5cf6', opacity: 0.8,
+      },
+    },
+  },`,
     },
     {
-      label: 'custom · image', svg: alt,
-      tint: { badge: { text: 'S', color: '#0ea5e9' } },
-      opts: env('custom', { src: altUrl, badge: { text: 'S', color: '#0ea5e9' } }),
-      source: `envFavicon({\n  environments: {\n    staging: {\n      // swap in a different image for this env, plus a badge\n      src: '/logo.staging.svg',\n      badge: { text: 'S', color: '#0ea5e9' },\n    },\n  },\n})`,
+      label: 'custom · image', custom: true, tint: { badge: { text: 'S', color: '#0ea5e9' } }, envs: ['staging'],
+      body: `  environments: {
+    staging: {
+      // swap in a different image for this env, plus a badge
+      src: '/logo.staging.svg',
+      badge: { text: 'S', color: '#0ea5e9' },
+    },
+  },`,
     },
     {
-      label: 'rules · url', svg: base, tint: matchRules(ruleCfg, url), opts: { rules: ruleCfg },
-      source: `envFavicon({\n  // match the URL — the regex capture feeds the badge text\n  rules: [\n    // e.g. localhost:5173 -> "#5173"\n    { match: /:(\\d+)$/, badge: { text: '#$1', shape: 'cover' } },\n  ],\n})`,
+      label: 'rules · url', tint: matchRules(ruleCfg, url), opts: { rules: ruleCfg }, envs: [],
+      body: `  // match the URL — the regex capture feeds the badge text
+  rules: [
+    // e.g. localhost:5173 -> "#5173"
+    { match: /:(\\d+)$/, badge: { text: '#$1', shape: 'cover' } },
+  ],`,
     },
     {
-      label: 'auto · host', svg: base, tint: { hue: hashHue(location.host) }, opts: { auto: true },
-      source: `envFavicon({\n  // one stable colour per host (a hash of location.host) — no\n  // environments needed; different hosts get different colours\n  auto: true,\n})`,
+      label: 'auto · host', tint: { hue: hashHue(location.host) }, opts: { auto: true }, envs: [],
+      body: `  // one stable colour per host (a hash of location.host) — no
+  // environments needed; different hosts get different colours
+  auto: true,`,
     },
   ];
+
+  const previewFor = (type) => faviconDataUri(type.custom ? altImage() : frameworkBase(), type.tint);
+  // Pass `source` explicitly so envFavicon tints the *currently selected* base logo.
+  // (The library remembers the first icon it tints, so without this it would keep
+  // re-tinting the original favicon no matter which framework you pick.)
+  const optsFor = (type) =>
+    type.custom
+      ? env('custom', { src: svgToDataUri(altImage()), badge: { text: 'S', color: '#0ea5e9' } })
+      : { ...type.opts, source: frameworkBaseUrl() };
+  const codeFor = (type) => FRAMEWORKS[fw].wrap(type);
 
   // --- tiny zero-dependency JS syntax highlighter ---
   const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
   const esc = (s) => s.replace(/[&<>]/g, (c) => ESC[c]);
   function highlight(code) {
     const RE =
-      /(\/\/[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\/(?:[^/\\\n]|\\.)+\/[a-z]*)|(\b\d+(?:\.\d+)?\b)|(\b(?:true|false|null|undefined)\b)|(\b(?:const|let|import|from|export|return)\b)|([A-Za-z_$][\w$]*)|(\s+)|([^\s])/g;
+      /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|(<!--[\s\S]*?-->)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(<\/?[A-Za-z][\w.:-]*|\/>)|(\/(?:[^/\\\n]|\\.)+\/[a-z]*)|(\b\d+(?:\.\d+)?\b)|(\b(?:true|false|null|undefined)\b)|(\b(?:const|let|import|from|export|return|function|void|new|class|if|else|default)\b)|([A-Za-z_$][\w$]*)|(\s+)|([^\s])/g;
     const toks = [];
     let m;
     while ((m = RE.exec(code))) {
       const type =
-        m[1] != null ? 'comment' : m[2] != null ? 'str' : m[3] != null ? 'regex'
-        : m[4] != null ? 'num' : m[5] != null ? 'bool' : m[6] != null ? 'kw'
-        : m[7] != null ? 'id' : m[8] != null ? 'ws' : 'punct';
+        m[1] != null || m[2] != null || m[3] != null ? 'comment'
+        : m[4] != null ? 'str' : m[5] != null ? 'tag' : m[6] != null ? 'regex'
+        : m[7] != null ? 'num' : m[8] != null ? 'bool' : m[9] != null ? 'kw'
+        : m[10] != null ? 'id' : m[11] != null ? 'ws' : 'punct';
       toks.push([type, m[0]]);
     }
     for (let i = 0; i < toks.length; i += 1) {
@@ -231,38 +627,93 @@
   }
 
   const grid = document.getElementById('grid');
-  const tabfav = document.getElementById('tabfav');
   const srcEl = document.getElementById('src');
-  let active = null;
+  const fwSelect = document.getElementById('framework');
+  const status = document.getElementById('status');
+  let cards = [];
+  let activeIndex = 0;
   let currentSource = '';
 
   function resetFavicon() {
     document.querySelectorAll('link[rel~="icon"]').forEach((l) => l.remove());
     const l = document.createElement('link');
-    l.rel = 'icon'; l.type = 'image/svg+xml'; l.href = baseUrl;
+    l.rel = 'icon'; l.type = 'image/svg+xml'; l.href = frameworkBaseUrl();
     document.head.append(l);
   }
 
-  function select(card, type) {
-    if (active) active.classList.remove('active');
-    card.classList.add('active');
-    active = card;
-    tabfav.src = card.querySelector('img').src; // mirror into the mock tab
-    currentSource = type.source;
-    srcEl.innerHTML = highlight(type.source); // show its code
+  function select(i, moveFocus) {
+    activeIndex = i;
+    const type = types[i];
+    // Radiogroup semantics: one checked radio, roving tabindex (only it is tabbable).
+    cards.forEach((c, j) => {
+      const on = j === i;
+      c.classList.toggle('active', on);
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+      c.tabIndex = on ? 0 : -1;
+    });
+    if (moveFocus) cards[i].focus();
+    currentSource = codeFor(type);
+    srcEl.innerHTML = highlight(currentSource); // show its (framework-wrapped) code
+    status.textContent = `${type.label} — ${FRAMEWORKS[fw].label}`; // announce to AT
     resetFavicon();
-    envFavicon(type.opts); // …and re-tint the real browser tab
+    envFavicon(optsFor(type)); // …and re-tint the real browser tab
   }
 
-  for (const type of types) {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'card';
-    const preview = faviconDataUri(type.svg, type.tint); // pure — no favicon swap
-    card.innerHTML = `<img src="${preview}" width="66" height="66" alt="" /><span class="lbl">${type.label}</span>`;
-    card.addEventListener('click', () => select(card, type));
-    grid.append(card);
+  function buildGrid() {
+    grid.innerHTML = '';
+    cards = types.map((type, i) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'card';
+      card.setAttribute('role', 'radio');
+      card.setAttribute('aria-checked', 'false');
+      card.tabIndex = -1;
+      card.innerHTML =
+        `<img src="${previewFor(type)}" width="66" height="66" alt="" /><span class="lbl">${type.label}</span>`;
+      card.addEventListener('click', () => select(i));
+      grid.append(card);
+      return card;
+    });
   }
+
+  // Arrow keys move (and select) within the radiogroup; Home/End jump to the ends.
+  grid.addEventListener('keydown', (e) => {
+    const n = cards.length;
+    let to = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = (activeIndex + 1) % n;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = (activeIndex - 1 + n) % n;
+    else if (e.key === 'Home') to = 0;
+    else if (e.key === 'End') to = n - 1;
+    if (to === null) return;
+    e.preventDefault();
+    select(to, true);
+  });
+
+  // Build the <select> options, each carrying its framework's logo. In a
+  // customizable-select browser the icon shows in the option and the trigger; a
+  // native fallback just renders the label text.
+  // The JavaScript logo — shown ONLY inline in the "None / vanilla JS" option
+  // (the base favicon it tints stays the cat, since FRAMEWORKS.none.logo is null).
+  const vanillaIcon =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" rx="52" fill="#f7df1e"/><path d="M67.311746,213.932292 L86.902654,202.076241 C90.6821079,208.777346 94.1202286,214.447137 102.367086,214.447137 C110.272203,214.447137 115.256076,211.354819 115.256076,199.326883 L115.256076,117.528787 L139.313575,117.528787 L139.313575,199.666997 C139.313575,224.58433 124.707759,235.925943 103.3984,235.925943 C84.1532952,235.925943 72.9819429,225.958603 67.3113397,213.93026" fill="#000"/><path d="M152.380952,211.354413 L171.969422,200.0128 C177.125994,208.433981 183.827911,214.619835 195.684368,214.619835 C205.652521,214.619835 212.009041,209.635962 212.009041,202.762159 C212.009041,194.513676 205.479416,191.592025 194.481168,186.78207 L188.468419,184.202565 C171.111213,176.81473 159.597308,167.53534 159.597308,147.944838 C159.597308,129.901308 173.344508,116.153295 194.825752,116.153295 C210.119924,116.153295 221.117765,121.48094 229.021663,135.400432 L210.29059,147.428775 C206.166146,140.040127 201.699556,137.119289 194.826159,137.119289 C187.78047,137.119289 183.312254,141.587098 183.312254,147.428775 C183.312254,154.646349 187.78047,157.568406 198.089956,162.036622 L204.103924,164.614095 C224.553448,173.378641 236.067352,182.313448 236.067352,202.418387 C236.067352,224.071924 219.055137,235.927975 196.200432,235.927975 C173.860978,235.927975 159.425829,225.274311 152.381359,211.354413" fill="#000"/></svg>';
+  for (const [key, def] of Object.entries(FRAMEWORKS)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.setAttribute('aria-label', def.label); // clean name for AT (the <img> is decorative)
+    opt.selected = key === 'none';
+    opt.innerHTML =
+      `<img class="opt-icon" src="${svgToDataUri(def.logo ?? vanillaIcon)}" alt="" width="20" height="20" />` +
+      `<span class="opt-label">${def.label}</span>`;
+    fwSelect.append(opt);
+  }
+
+  // Picking a framework swaps the base icon (so every card tints its logo) and
+  // rewrites the snippet; re-apply the current card so the tab + code update too.
+  fwSelect.addEventListener('change', () => {
+    fw = fwSelect.value;
+    buildGrid();
+    select(activeIndex);
+  });
 
   const copyBtn = document.getElementById('copy');
   copyBtn.addEventListener('click', async () => {
@@ -270,6 +721,24 @@
       await navigator.clipboard.writeText(currentSource);
       copyBtn.textContent = 'Copied';
       setTimeout(() => (copyBtn.textContent = 'Copy'), 1200);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  });
+
+  // Install line — copy `pnpm add favicon-env`; the icon morphs to a check briefly.
+  const installCopy = document.getElementById('installCopy');
+  let installResetT;
+  installCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText('pnpm add favicon-env');
+      installCopy.classList.add('copied');
+      installCopy.setAttribute('aria-label', 'Copied');
+      clearTimeout(installResetT);
+      installResetT = setTimeout(() => {
+        installCopy.classList.remove('copied');
+        installCopy.setAttribute('aria-label', 'Copy install command');
+      }, 1400);
     } catch {
       /* clipboard unavailable — ignore */
     }
@@ -309,8 +778,9 @@
     }
   });
 
-  // Start on prod (base icon), highlighted.
-  select(grid.firstElementChild, types[0]);
+  // Start on vanilla + prod, highlighted.
+  buildGrid();
+  select(0);
 </script>
 </body>
 </html>

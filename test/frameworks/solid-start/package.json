@@ -1,0 +1,18 @@
+{
+  "name": "@favicon-env-test/solid-start",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "node start.mjs"
+  },
+  "dependencies": {
+    "@solidjs/meta": "^0.29.4",
+    "@solidjs/router": "^0.15.4",
+    "@solidjs/start": "^1.3.2",
+    "favicon-env": "workspace:*",
+    "solid-js": "^1.9.14",
+    "vinxi": "^0.5.8"
+  }
+}

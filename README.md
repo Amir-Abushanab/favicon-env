@@ -2,13 +2,13 @@
 
 Tint your favicon per environment so you can tell instances apart at a glance — no more staring at three identical tabs wondering which one is production.
 
-![favicon-env — the same base icon per environment: prod, dev (hue-shift), dev (exact-colour tint), staging (dot), a "#344" preview cover, and a custom image](docs/hero.png)
+![favicon-env — the same base icon per environment: prod, dev (hue-shift), dev (exact-colour tint), dev (invert), staging (dot), a "#344" preview cover, and a custom image](docs/hero.png)
 
 **[▶ Live, clickable demo](https://amir-abushanab.github.io/favicon-env/)**
 
-- **Runtime mode** — one import, any framework, any deploy. Detects the environment in the browser and re-tints the favicon on a `<canvas>`, so it works with whatever favicon you already have (svg / png / ico).
-- **Build-time mode** — a tiny SVG helper that bakes the tint in at build/SSR time, for zero first-paint flash.
-- **Zero dependencies.** ~2.3 kB min+gzip (the build-time SSR helper alone is ~1.7 kB).
+- **Runtime mode** — tint an existing SVG, PNG, or ICO in the browser.
+- **Build-time mode** — bake changes into an SVG during build or SSR.
+- **Zero dependencies.** ~2.3 kB min+gzip.
 
 ## Install
 
@@ -16,42 +16,100 @@ Tint your favicon per environment so you can tell instances apart at a glance �
 pnpm add favicon-env
 ```
 
-> **Using an AI coding agent?** favicon-env ships an [Agent Skill](https://tanstack.com/intent) (via TanStack Intent) — run `npx @tanstack/intent@latest install` and your agent picks up the correct patterns (framework placement, badges, runtime vs SSR) straight from the package, versioned with it.
+> **Using an AI coding agent?** Install the bundled [Agent Skill](https://tanstack.com/intent) with `pnpm dlx @tanstack/intent@latest install`.
 
 ## Runtime mode
 
 ```js
-import { envFavicon } from 'favicon-env'
+import { envFavicon } from 'favicon-env';
 
 envFavicon({
   environments: {
-    dev:     { hue: 130 },          // hue-rotate degrees
-    staging: { badge: '#f59e0b' },  // …or a corner dot that keeps the logo intact
-    // prod omitted → left untouched
+    dev: { tint: '#22c55e' },
+    staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
   },
-})
+});
 ```
 
-Call it once on the client, as early as you can — it reads the current `<link rel="icon">`, redraws it tinted, and swaps it in. It's a no-op during SSR (it guards on `document`), so it's safe to import anywhere. Where it goes in the common setups:
+### Zero bytes in prod
+
+An unconditional call stays bundled even when `prod` is absent from `environments`. To remove the runtime, put `import('favicon-env')` behind a compile-time environment check. The examples below use this pattern, and the framework matrix scans their emitted prod assets to verify exclusion.
+
+Call it on the client after the favicon link exists:
 
 <details>
 <summary><b>Next.js</b> — App Router</summary>
 
 ```tsx
 // app/favicon-env.tsx — a client component
-'use client'
-import { useEffect } from 'react'
-import { envFavicon } from 'favicon-env'
+'use client';
+import { useEffect } from 'react';
+
+const appEnv = process.env.NEXT_PUBLIC_APP_ENV ?? 'prod';
 
 export function FaviconEnv() {
   useEffect(() => {
-    void envFavicon({ /* …environments, as above… */ })
-  }, [])
-  return null
+    if (appEnv !== 'dev' && appEnv !== 'staging') return;
+
+    let queued = false;
+    const apply = async () => {
+      queued = false;
+      const { envFavicon } = await import('favicon-env');
+      await envFavicon({
+        environments: {
+          dev: { tint: '#22c55e' },
+          staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+        },
+        detect: () => appEnv,
+      });
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      queueMicrotask(apply);
+    };
+    // Next can restore metadata-managed icons during hydration or navigation.
+    const observer = new MutationObserver(() => {
+      if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+        schedule();
+      }
+    });
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['href', 'rel'],
+    });
+    schedule();
+    return () => observer.disconnect();
+  }, []);
+  return null;
 }
 ```
 
-Then render `<FaviconEnv />` once inside `<body>` in `app/layout.tsx`. `useEffect` is the right hook here — a run-once, client-only side effect, safe under React StrictMode's double-invoke (re-tinting is idempotent). (Next ≥ 15.3: drop the call into `instrumentation-client.ts` and skip the component entirely. Pages Router: put the `useEffect` in `pages/_app.tsx`.)
+```tsx
+// app/layout.tsx
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
+import { FaviconEnv } from './favicon-env';
+
+export const metadata: Metadata = {
+  icons: { icon: '/favicon.svg' },
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <FaviconEnv />
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+The observer handles metadata reconciliation during hydration and navigation. Pages Router: render the component from `pages/_app.tsx`.
 
 </details>
 
@@ -59,13 +117,54 @@ Then render `<FaviconEnv />` once inside `<body>` in `app/layout.tsx`. `useEffec
 <summary><b>TanStack Router / Start</b></summary>
 
 ```tsx
-// src/main.tsx — your client entry, before you render the router
-import { envFavicon } from 'favicon-env'
+// src/client.tsx
+import { StartClient } from '@tanstack/react-start/client';
+import { StrictMode } from 'react';
+import { hydrateRoot } from 'react-dom/client';
 
-void envFavicon({ /* …environments, as above… */ })
+const appEnv = import.meta.env.VITE_APP_ENV ?? 'prod';
+
+if (appEnv === 'dev' || appEnv === 'staging') {
+  let queued = false;
+  const apply = async () => {
+    queued = false;
+    const { envFavicon } = await import('favicon-env');
+    await envFavicon({
+      environments: {
+        dev: { tint: '#22c55e' },
+        staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+      },
+      detect: () => appEnv,
+    });
+  };
+  const schedule = () => {
+    if (queued) return;
+    queued = true;
+    queueMicrotask(apply);
+  };
+  const observer = new MutationObserver(() => {
+    if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+      schedule();
+    }
+  });
+  observer.observe(document.head, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['href', 'rel'],
+  });
+  schedule();
+}
+
+hydrateRoot(
+  document,
+  <StrictMode>
+    <StartClient />
+  </StrictMode>,
+);
 ```
 
-The entry runs on the client, so no `useEffect` is needed. (TanStack Start / SSR: the same call in your client entry is a no-op on the server, thanks to the `document` guard.)
+Create the optional `src/client.tsx` entry. For a TanStack Router SPA, use the same observer in `src/main.tsx` before rendering the app.
 
 </details>
 
@@ -74,29 +173,373 @@ The entry runs on the client, so no `useEffect` is needed. (TanStack Start / SSR
 
 ```astro
 ---
-// src/layouts/Layout.astro — a client <script>, bundled and run in the browser
+// src/layouts/Layout.astro
 ---
-<script>
-  import { envFavicon } from 'favicon-env'
-  void envFavicon({ /* …environments, as above… */ })
-</script>
+<html lang="en">
+  <head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <slot />
+    <script>
+      const appEnv = import.meta.env.PUBLIC_APP_ENV ?? 'prod';
+      if (appEnv === 'dev' || appEnv === 'staging') {
+        void import('favicon-env').then(({ envFavicon }) =>
+          envFavicon({
+            environments: {
+              dev: { tint: '#22c55e' },
+              staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+            },
+            detect: () => appEnv,
+          }),
+        );
+      }
+    </script>
+  </body>
+</html>
 ```
 
-For Astro you can also bake the tint straight into the HTML for **zero first-paint flash** — see the *Build-time / SSR mode* section below, which is the recommended path when you control the favicon SVG.
+For an SVG with no first-paint flash, use the build-time helper below.
 
 </details>
 
 <details>
-<summary><b>Vite SPA · Vue · Svelte · vanilla</b></summary>
+<summary><b>SvelteKit</b></summary>
 
-```js
-// your client entry — src/main.ts, main.js, …
-import { envFavicon } from 'favicon-env'
+```svelte
+<!-- src/routes/+layout.svelte -->
+<script lang="ts">
+  import { onMount } from 'svelte';
 
-void envFavicon({ /* …environments, as above… */ })
+  let { children } = $props();
+
+  onMount(() => {
+    const appEnv = __FAVICON_ENV_APP_ENV__;
+    if (appEnv !== 'dev' && appEnv !== 'staging') return;
+
+    let queued = false;
+    const apply = async () => {
+      queued = false;
+      const { envFavicon } = await import('favicon-env');
+      await envFavicon({
+        environments: {
+          dev: { tint: '#22c55e' },
+          staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+        },
+        detect: () => appEnv,
+      });
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      queueMicrotask(apply);
+    };
+    const observer = new MutationObserver(() => {
+      if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+        schedule();
+      }
+    });
+
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['href', 'rel'],
+    });
+    schedule();
+
+    return () => observer.disconnect();
+  });
+</script>
+
+<svelte:head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</svelte:head>
+
+{@render children()}
 ```
 
-The entry module already runs in the browser, so no framework hook is needed. (In Vue you could equally call it from `onMounted` in your root component.)
+```ts
+// vite.config.ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  define: {
+    __FAVICON_ENV_APP_ENV__: JSON.stringify(process.env.PUBLIC_APP_ENV ?? 'prod'),
+  },
+  plugins: [sveltekit()],
+});
+```
+
+```ts
+// src/app.d.ts
+declare const __FAVICON_ENV_APP_ENV__: string;
+```
+
+The explicit build constant lets Vite remove the import from prod output.
+
+</details>
+
+<details>
+<summary><b>SolidStart</b></summary>
+
+```tsx
+// src/app.tsx
+import { Link, MetaProvider } from '@solidjs/meta';
+import { Router } from '@solidjs/router';
+import { FileRoutes } from '@solidjs/start/router';
+import { onCleanup, onMount, Suspense } from 'solid-js';
+
+export default function App() {
+  onMount(() => {
+    const appEnv = import.meta.env.VITE_APP_ENV ?? 'prod';
+    if (appEnv !== 'dev' && appEnv !== 'staging') return;
+
+    let queued = false;
+    const apply = async () => {
+      queued = false;
+      const { envFavicon } = await import('favicon-env');
+      await envFavicon({
+        environments: {
+          dev: { tint: '#22c55e' },
+          staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+        },
+        detect: () => appEnv,
+      });
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      queueMicrotask(apply);
+    };
+    const observer = new MutationObserver(() => {
+      if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+        schedule();
+      }
+    });
+
+    observer.observe(document.head, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['href', 'rel'],
+    });
+    schedule();
+    onCleanup(() => observer.disconnect());
+  });
+
+  return (
+    <Router
+      root={(props) => (
+        <MetaProvider>
+          <Link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+          <Suspense>{props.children}</Suspense>
+        </MetaProvider>
+      )}
+    >
+      <FileRoutes />
+    </Router>
+  );
+}
+```
+
+Keep the hook in the app root so it survives route changes.
+
+</details>
+
+<details>
+<summary><b>Angular SSR</b> — standalone application</summary>
+
+```ts
+// src/app/app.ts
+import { Component, DestroyRef, afterNextRender, inject } from '@angular/core';
+import { loadEnvFavicon } from './favicon-env-loader';
+
+declare const APP_ENV: string;
+
+@Component({ selector: 'app-root', template: '<main>App</main>', imports: [] })
+export class App {
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    afterNextRender(() => {
+      if (APP_ENV !== 'dev' && APP_ENV !== 'staging') return;
+
+      let queued = false;
+      const apply = async () => {
+        queued = false;
+        const envFavicon = await loadEnvFavicon();
+        if (!envFavicon) return;
+        await envFavicon({
+          environments: {
+            dev: { tint: '#22c55e' },
+            staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+          },
+          detect: () => APP_ENV,
+        });
+      };
+      const schedule = () => {
+        if (queued) return;
+        queued = true;
+        queueMicrotask(apply);
+      };
+      const observer = new MutationObserver(() => {
+        if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+          schedule();
+        }
+      });
+
+      observer.observe(document.head, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['href', 'rel'],
+      });
+      schedule();
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
+}
+```
+
+```ts
+// src/app/favicon-env-loader.ts
+export async function loadEnvFavicon() {
+  return (await import('favicon-env')).envFavicon;
+}
+```
+
+```ts
+// src/app/favicon-env-loader.prod.ts
+import type { EnvFaviconOptions } from 'favicon-env';
+
+type EnvFavicon = (options?: EnvFaviconOptions) => Promise<void>;
+
+export async function loadEnvFavicon(): Promise<EnvFavicon | null> {
+  return null;
+}
+```
+
+In the production build configuration in `angular.json`:
+
+```json
+{
+  "define": { "APP_ENV": "'prod'" },
+  "fileReplacements": [
+    {
+      "replace": "src/app/favicon-env-loader.ts",
+      "with": "src/app/favicon-env-loader.prod.ts"
+    }
+  ]
+}
+```
+
+Use the real loader for dev/staging. Angular's file replacement prevents it from emitting an unused lazy chunk in prod.
+
+</details>
+
+<details>
+<summary><b>Nuxt</b></summary>
+
+```ts
+// app/plugins/favicon-env.client.ts
+export default defineNuxtPlugin(() => {
+  const appEnv = __FAVICON_ENV_APP_ENV__;
+  if (appEnv !== 'dev' && appEnv !== 'staging') return;
+
+  let queued = false;
+  const apply = async () => {
+    queued = false;
+    const { envFavicon } = await import('favicon-env');
+    await envFavicon({
+      environments: {
+        dev: { tint: '#22c55e' },
+        staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+      },
+      detect: () => appEnv,
+    });
+  };
+  const schedule = () => {
+    if (queued) return;
+    queued = true;
+    queueMicrotask(apply);
+  };
+  const observer = new MutationObserver(() => {
+    if (document.head.querySelector('link[rel~="icon"]:not([data-favicon-env])')) {
+      schedule();
+    }
+  });
+
+  observer.observe(document.head, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['href', 'rel'],
+  });
+  schedule();
+});
+```
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  vite: {
+    define: {
+      __FAVICON_ENV_APP_ENV__: JSON.stringify(process.env.NUXT_PUBLIC_APP_ENV ?? 'prod'),
+    },
+  },
+  app: {
+    head: {
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+    },
+  },
+});
+```
+
+```ts
+// app/types.d.ts
+declare const __FAVICON_ENV_APP_ENV__: string;
+```
+
+The explicit build constant lets Vite remove the import from prod output.
+
+</details>
+
+<details>
+<summary><b>Plain HTML</b> — ESM and global builds</summary>
+
+```html
+<!-- Native ESM through an ESM-aware CDN -->
+<link rel="icon" href="/favicon.svg" />
+<script type="module">
+  import { envFavicon } from 'https://esm.sh/favicon-env';
+
+  void envFavicon({
+    environments: {
+      dev: { tint: '#22c55e' },
+      staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+    },
+  });
+</script>
+```
+
+```html
+<!-- Classic global build -->
+<link rel="icon" href="/favicon.svg" />
+<script src="https://unpkg.com/favicon-env/dist/favicon-env.global.js"></script>
+<script>
+  void faviconEnv.envFavicon({
+    environments: {
+      dev: { tint: '#22c55e' },
+      staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+    },
+  });
+</script>
+```
+
+The global script can also auto-run with `data-auto` or `data-dev`/`data-staging` attributes.
+For a zero-byte prod page, have the HTML build/template omit these scripts when the app environment is `prod`.
 
 </details>
 
@@ -104,69 +547,84 @@ By default the environment is guessed from the hostname (`localhost` / `*.local`
 
 ```js
 envFavicon({
-  environments: { /* … */ },
+  environments: {
+    dev: { tint: '#22c55e' },
+    staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+  },
   detect: () => (location.port === '4000' ? 'staging' : 'prod'),
-})
+});
 ```
 
-Environment **names are arbitrary** — they're just keys into `environments`, so you aren't limited to `dev`/`staging`/`prod`. Define your own and return them from `detect` (the built-in heuristic only emits the three defaults, so custom names need a custom `detect`):
+Environment names are arbitrary. Custom names require a custom `detect`:
 
 ```js
 envFavicon({
   environments: {
     canary: { hue: 280 },
-    demo:   { badge: '#22c55e' },
+    demo: { badge: '#22c55e' },
   },
   detect: () => {
-    if (location.hostname.startsWith('canary.')) return 'canary'
-    if (location.hostname.endsWith('.demo.acme.com')) return 'demo'
-    return 'prod' // not in the map → favicon left untouched
+    if (location.hostname.startsWith('canary.')) return 'canary';
+    if (location.hostname.endsWith('.demo.acme.com')) return 'demo';
+    return 'prod'; // not in the map → favicon left untouched
   },
-})
+});
 ```
 
-`detect` can key off anything, not just the hostname — e.g. `detect: () => import.meta.env.MODE`.
+`detect` can use any runtime value, such as `import.meta.env.MODE`.
 
 ### Exact colours
 
-`hue` *rotates* every colour by a fixed angle — a relative shift that keeps the icon's shading **and** saturation, so it can't target a specific colour (and it barely moves white/black/grey). For a **specific** colour, use `tint`: it recolours the icon to that exact colour as a duotone — shape and shading kept, the original colours replaced — so a white logo becomes solid `tint`:
+Use `hue` for a relative colour shift or `tint` for a specific duotone colour:
 
 ```js
 envFavicon({
   environments: {
-    dev:     { tint: '#22c55e' }, // exact green (shape + shading kept)
-    staging: { tint: '#f59e0b' }, // exact amber
+    dev: { tint: '#22c55e' },
+    staging: { tint: '#f59e0b' },
   },
-})
+});
 ```
 
-Want a flat single-colour block instead of a duotone? Use a text-less `cover` badge (`{ badge: { color: '#22c55e', shape: 'cover' } }`). Want a different icon entirely? Use `src`.
+Colour fields accept CSS colours, including `oklch()`, `lab()`, and `color(display-p3 …)` where supported.
 
-Any colour (`tint`, `badge.color`, `textColor`) can be **any CSS colour** — including CSS Color 4 spaces like `oklch()`, `oklab()`, `lab()`, `lch()`, and `color(display-p3 …)` on browsers that support them (they degrade gracefully elsewhere). Badge text auto-contrasts against `oklch`/`oklab`/`lab`/`lch` colours too.
+### Invert
+
+Pass `true` for a full invert or `0`–`1` for a partial invert:
+
+```js
+envFavicon({
+  environments: {
+    dev: { invert: true },
+    staging: { invert: 0.9 },
+  },
+});
+```
+
+`invert` composes with `hue`; `tint` takes precedence, and `filter` overrides both.
 
 ### Auto mode
 
-Don't want to name environments at all? Derive a **stable, unique hue from `location.host`**, so every origin *and port* automatically gets its own colour — perfect for telling several dev servers apart:
+Derive a stable hue from `location.host`:
 
 ```js
-envFavicon({ auto: true })
+envFavicon({ auto: true });
 ```
 
 ### Badges, PR numbers & URL rules
 
-A `badge` is either a colour (a dot) or an object with `text` — handy for preview deploys, where you want the **PR number** on the icon. The cleanest way is a `rules` list: match the URL with a `RegExp` and drop its captures straight into the text with `$1` / `$<name>`:
+A `badge` can be a colour dot or an object with text. Rules can interpolate regex captures with `$1` or `$<name>`:
 
 ```js
 envFavicon({
   rules: [
-    // e.g. a preview deploy at pr-344.myapp.dev  →  a "#344" pill
     { match: /^pr-(\d+)\./, badge: { text: '#$1', color: '#8b5cf6' } },
     { match: /staging\./, hue: 45 },
   ],
-})
+});
 ```
 
-`match` is tested against `location.host` (so `:port` is included). Rules are tried in order — first match wins — then fall through to `auto` / `environments` if none match. Need more than the host? Use a function: it receives the full `URL`, and `text` can be a function too:
+Regex rules test `location.host`, including the port. First match wins. Functions receive the full `URL`:
 
 ```js
 rules: [
@@ -174,12 +632,10 @@ rules: [
     match: (url) => url.searchParams.has('pr'),
     badge: { text: (match, url) => `#${url.searchParams.get('pr')}` },
   },
-]
+];
 ```
 
-`textColor` defaults to auto (black/white by contrast with `color`).
-
-Multi-digit numbers get cramped in a corner at 16px. `shape: 'cover'` replaces the icon with a full-bleed number so it reads even in the tab (or keep the icon and just enlarge the pill with `size` + `corner: 'center'`):
+Use `shape: 'cover'` to make multi-digit text readable at favicon size:
 
 ```js
 { badge: { text: '#344', color: '#8b5cf6', shape: 'cover' } }
@@ -187,7 +643,7 @@ Multi-digit numbers get cramped in a corner at 16px. `shape: 'cover'` replaces t
 
 ### A different image per environment
 
-Set `src` to swap the base image outright for an environment — e.g. a distinct staging logo. Any `hue` / `filter` / `badge` still composites on top:
+Use `src` to replace the base image. Other effects still apply:
 
 ```js
 envFavicon({
@@ -195,30 +651,12 @@ envFavicon({
     staging: { src: '/favicon.staging.svg' },
     preview: { src: '/favicon.svg', badge: { text: '#344' } },
   },
-})
-```
-
-A plain `src` with no recolour/badge is applied directly (no canvas), so cross-origin images and crisp vectors just work.
-
-### No build step
-
-Drop in a `<script>` tag; it auto-runs from `data-*` attributes and also exposes `window.faviconEnv`:
-
-```html
-<!-- unique colour per host, zero config -->
-<script src="https://unpkg.com/favicon-env/dist/favicon-env.global.js" data-auto></script>
-
-<!-- or name your environments (hue in degrees) -->
-<script
-  src="https://unpkg.com/favicon-env/dist/favicon-env.global.js"
-  data-dev="130"
-  data-staging="45"
-></script>
+});
 ```
 
 ## Build-time / SSR mode
 
-If you control the favicon SVG and want **no flash**, bake the tint in at build time instead. `faviconDataUri` returns a ready `href`:
+Use `faviconDataUri` to bake changes into an SVG:
 
 ```astro
 ---
@@ -232,78 +670,77 @@ const tint = { dev: { hue: 130 }, staging: { hue: 45 }, prod: false }[env]
 <link rel="icon" type="image/svg+xml" href={faviconDataUri(favicon, tint)} />
 ```
 
-`favicon-env/ssr` is pure string manipulation with no DOM dependency, so it's safe to run in Node during a build. Badges work here too — they're baked into the SVG (positioned via its `viewBox`), so you can stamp a PR number at build time with no flash:
+The SSR entry has no DOM dependency and supports badges:
 
 ```js
-const pr = process.env.VERCEL_GIT_PULL_REQUEST_ID
-faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 })
+const pr = process.env.VERCEL_GIT_PULL_REQUEST_ID;
+faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 });
 ```
 
 ### Vite
 
-A plain Vite SPA has no template to bake the tint into — its `index.html` is static. Drop this small plugin into your `vite.config` to rewrite the `<link rel="icon">` at build time, choosing the tint from Vite's `mode`:
+This Vite plugin rewrites an SVG favicon using the current mode:
 
 ```js
 // vite.config.js
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { defineConfig } from 'vite'
-import { faviconDataUri } from 'favicon-env/ssr'
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { defineConfig } from 'vite';
+import { faviconDataUri } from 'favicon-env/ssr';
 
-// keyed by Vite `mode` (e.g. `vite build --mode staging`); omit prod to leave it untouched
 const tints = {
   development: { hue: 130 },
   staging: { hue: 45 },
-}
+};
 
 function faviconEnv() {
-  let config
+  let config;
   return {
     name: 'favicon-env',
     configResolved(resolved) {
-      config = resolved
+      config = resolved;
     },
     transformIndexHtml(html) {
-      const tint = tints[config.mode]
-      if (!tint) return // no rule for this mode → leave the icon alone
+      const tint = tints[config.mode];
+      if (!tint) return;
       return html.replace(/<link\b[^>]*\brel=["']icon["'][^>]*>/i, (tag) => {
-        const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1]
-        if (!href?.endsWith('.svg')) return tag // SVG only; skip png/ico
-        let svg
+        const href = tag.match(/\bhref=["']([^"']+)["']/i)?.[1];
+        if (!href?.endsWith('.svg')) return tag;
+        let svg;
         try {
-          svg = readFileSync(path.join(config.publicDir, href.replace(/^\//, '')), 'utf8')
+          svg = readFileSync(path.join(config.publicDir, href.replace(/^\//, '')), 'utf8');
         } catch {
-          return tag // not in public/ (missing / bundled asset) → untouched
+          return tag;
         }
-        return tag.replace(/\bhref=["'][^"']*["']/i, `href="${faviconDataUri(svg, tint)}"`)
-      })
+        return tag.replace(/\bhref=["'][^"']*["']/i, `href="${faviconDataUri(svg, tint)}"`);
+      });
     },
-  }
+  };
 }
 
 export default defineConfig({
   plugins: [faviconEnv()],
-})
+});
 ```
 
-Now `vite dev` and `vite build` serve the tint baked into the initial HTML — no first-paint flash — reading your favicon from `public/` and falling through untouched for non-SVG icons or a missing file. Prefer env vars to `--mode`? Swap `tints[config.mode]` for a lookup keyed off `loadEnv(config.mode, config.root, 'PUBLIC_').PUBLIC_APP_ENV`.
+The favicon must be an SVG in `public/`. Omit a mode to leave it unchanged.
 
 ## API
 
 ### `envFavicon(options?): Promise<void>` — runtime
 
-| option         | type                                  | default              | description                                                        |
-| -------------- | ------------------------------------- | -------------------- | ------------------------------------------------------------------ |
-| `environments` | `Record<string, EnvTint \| false>`    | —                    | Map of env name (any string) → tint. Missing/`false` = untouched.   |
-| `rules`        | `EnvRule[]`                           | —                    | URL-matched tints, checked first; regex captures fill `badge.text`.|
-| `detect`       | `() => string \| undefined`           | hostname heuristic   | Return the current env name (a key of `environments`).             |
-| `auto`         | `boolean \| { offset?: number }`      | `false`              | Ignore `environments`; derive a unique hue from `location.host`.   |
-| `source`       | `string`                              | current icon / `.ico`| Favicon URL to tint.                                               |
-| `size`         | `number`                              | `64`                 | Canvas raster size in px.                                          |
+| option         | type                               | default               | description                                                         |
+| -------------- | ---------------------------------- | --------------------- | ------------------------------------------------------------------- |
+| `environments` | `Record<string, EnvTint \| false>` | —                     | Map of env name (any string) → tint. Missing/`false` = untouched.   |
+| `rules`        | `EnvRule[]`                        | —                     | URL-matched tints, checked first; regex captures fill `badge.text`. |
+| `detect`       | `() => string \| undefined`        | hostname heuristic    | Return the current env name (a key of `environments`).              |
+| `auto`         | `boolean \| { offset?: number }`   | `false`               | Ignore `environments`; derive a unique hue from `location.host`.    |
+| `source`       | `string`                           | current icon / `.ico` | Favicon URL to tint.                                                |
+| `size`         | `number`                           | `64`                  | Canvas raster size in px.                                           |
 
-`EnvTint`: `{ hue?: number; tint?: string; filter?: string; src?: string; badge?: string | Badge }`. `hue` rotates the icon's hue (relative); `tint` colourises it to an *exact* colour (a duotone that keeps the artwork's shape + shading — a white logo becomes solid `tint`); `filter` (any CSS filter) beats both; `src` replaces the base image for that env; `badge` is a colour string (a dot) or a `Badge`. Everything composites in one pass.
+`EnvTint`: `{ hue?: number; invert?: boolean | number; tint?: string; filter?: string; src?: string; badge?: string | Badge }`. Precedence is `filter` → `tint` → `hue`/`invert`; `src` replaces the base image.
 
-`Badge`: `{ text?: string | number; color?: string; textColor?: string; shape?: 'pill' | 'cover'; corner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'; size?: number; opacity?: number }`. Omit `text` for a dot; include it for a pill. `color` sets the background and `textColor` the text (default: auto black/white by contrast). Two styles: the default `'pill'` sits on top of your icon (placed by `corner`/`size`); `'cover'` replaces the whole icon with the colour + number, best for a multi-digit number that must read at 16px. `opacity` (0–1) fades the badge — with `'cover'`, below `1` it lets your icon show *through* the number (a watermark). Everything composites in one pass, so you can combine `src` + `hue`/`filter` + `badge`.
+`Badge`: `{ text?: string | number; color?: string; textColor?: string; shape?: 'pill' | 'cover'; corner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'; size?: number; opacity?: number }`. Without text it renders a dot. `textColor` defaults to automatic black/white contrast.
 
 `EnvRule`: an `EnvTint` plus `match: RegExp | ((url: URL) => boolean)`. A `RegExp` is tested against `location.host` and its captures interpolate into `badge.text` (`$1`, `$<name>`); a function receives the `URL`, and in a rule `badge.text` may also be `(match, url) => string | number`.
 
@@ -319,12 +756,11 @@ Now `vite dev` and `vite build` serve the tint baked into the initial HTML — n
 - `defaultDetect(hostname?) => string` — the built-in `dev`/`staging`/`prod` heuristic.
 - `matchRules(rules, url) => EnvTint | null` — the pure rule matcher (first match wins, captures interpolated). Reuse it server-side with a request `URL` and feed the result to `favicon-env/ssr`'s `faviconDataUri`.
 
-## How it works & caveats
+## Caveats
 
-- **Achromatic pixels barely move.** `hue-rotate` leaves white/black/grey roughly alone, so highlights and outlines survive; only the coloured parts shift.
-- **Runtime + cross-origin favicons.** Tinting draws to a canvas, so a cross-origin favicon served without CORS headers taints it — `envFavicon` catches that and leaves the icon untouched. Same-origin (the normal case) is fine.
-- **First-paint flash.** Runtime mode briefly shows the untinted icon before JS runs. Use the SSR helper if that matters.
-- **Browser support.** Runtime mode needs canvas `ctx.filter` (Baseline; unsupported browsers just get the untinted icon). SSR mode relies on SVG favicons honouring an embedded CSS `filter`, which all current evergreen browsers do.
+- Cross-origin favicons need CORS permission for runtime canvas processing; failures leave the icon unchanged.
+- Runtime mode may briefly show the original icon. Use the SSR helper to avoid this.
+- Runtime mode requires canvas `ctx.filter`; unsupported browsers keep the original icon.
 
 ## License
 

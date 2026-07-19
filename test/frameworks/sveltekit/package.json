@@ -1,0 +1,21 @@
+{
+  "name": "@favicon-env-test/sveltekit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "start": "node start.mjs"
+  },
+  "dependencies": {
+    "@sveltejs/adapter-node": "5.5.7",
+    "@sveltejs/kit": "2.63.0",
+    "@sveltejs/vite-plugin-svelte": "7.1.2",
+    "favicon-env": "workspace:*",
+    "svelte": "5.56.1",
+    "vite": "8.1.4"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

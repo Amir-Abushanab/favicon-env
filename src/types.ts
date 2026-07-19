@@ -3,6 +3,12 @@ export interface EnvTint {
   /** Hue rotation in degrees applied to the whole icon (e.g. `120`). */
   hue?: number;
   /**
+   * Invert the icon's colours — `true` for a full invert, or a number `0`–`1`
+   * for a partial one (maps to CSS `invert()`). Composes *with* `hue` (both are
+   * applied); an explicit `filter` beats it, and `tint` (a duotone) wins over it.
+   */
+  invert?: boolean | number;
+  /**
    * Colourise the icon to this exact colour (any CSS colour), preserving the
    * artwork's shape and relative shading — a duotone from black up to `tint`.
    * Unlike `hue` (a *relative* rotation) this sets an *absolute* colour, so a
