@@ -1,12 +1,16 @@
 name: Release
 
-# When changesets are pending on main, opens/updates a "Version Packages" PR
-# (bump + CHANGELOG). Merging that PR — which leaves no pending changesets —
-# publishes to npm via OIDC trusted publishing (no NPM_TOKEN) with provenance,
-# and pushes the release tag. Configure the trusted publisher on npmjs.com with
-# workflow filename `release.yml`.
+# Gated on Test: runs only after the Test workflow succeeds for a push to main,
+# so a release is never cut from a red commit (tests, typecheck, lint, and the
+# framework matrix must all pass first). When changesets are pending it opens/
+# updates the "Version Packages" PR (bump + CHANGELOG); merging that PR — which
+# leaves no pending changesets — publishes to npm via OIDC trusted publishing
+# (no NPM_TOKEN) with provenance, and pushes the release tag. Configure the
+# trusted publisher on npmjs.com with workflow filename `release.yml`.
 on:
-  push:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
     branches: [main]
 
 concurrency: ${{ github.workflow }}
@@ -18,6 +22,9 @@ permissions:
 
 jobs:
   release:
+    # Only for a *successful* Test run triggered by a push to main (PR runs are
+    # filtered out by `branches: [main]`, and never publish regardless).
+    if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,12 +42,13 @@ jobs:
       # already-published detection and crashes the release on no-op pushes.
       - run: pnpm install --frozen-lockfile
 
-      # Every push to main runs this job. With no pending changesets, changesets/
-      # action takes its "publish" path and re-runs `changeset publish` for the
-      # CURRENT version; when that version is already on npm it should skip, but
-      # changesets 2.31.0 crashes (isAlreadyPublishedError) instead. Decide up front
-      # and skip in that case. Real releases still run: pending changesets open the
-      # Version PR, and a merged Version PR carries a not-yet-published version.
+      # Test already ran the full suite; this job only versions/publishes. With no
+      # pending changesets, changesets/action takes its "publish" path and re-runs
+      # `changeset publish` for the CURRENT version; when that version is already on
+      # npm it should skip, but changesets 2.31.0 crashes (isAlreadyPublishedError)
+      # instead. Decide up front and skip in that case. Real releases still run:
+      # pending changesets open the Version PR, a merged Version PR carries a
+      # not-yet-published version.
       - name: Is there anything to release?
         id: rel
         run: |
