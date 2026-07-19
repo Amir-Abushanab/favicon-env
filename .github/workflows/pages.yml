@@ -10,7 +10,6 @@ permissions:
   pages: write
   id-token: write
 
-# Only one Pages deploy at a time; let a newer one supersede an in-flight one.
 concurrency:
   group: pages
   cancel-in-progress: true

@@ -1,14 +1,10 @@
 import { defineConfig } from 'tsup';
 
-// Two outputs:
-//   - ESM entries (`index`, `ssr`) → the package API consumed by bundlers.
-//       index → runtime (canvas) mode, browser-only, DOM-guarded.
-//       ssr   → build-time (SVG string) helpers, safe to run in Node.
-//   - A minified IIFE (`favicon-env.global`) exposing `window.faviconEnv`, for
-//     no-build sites that drop in a <script> tag (auto-runs from data-* attrs).
-// tsup emits JS only; `.d.ts` come from `tsc -p tsconfig.build.json` (see the
-// `build` script), since tsup's dts backend can't consume the TS 7 compiler API.
-// `clean` runs only on the first config so the second doesn't wipe its siblings.
+// ESM `index` (runtime/canvas, browser-only) + `ssr` (build-time SVG, Node-safe),
+// plus a minified IIFE `favicon-env.global` (window.faviconEnv) for no-build <script>
+// sites. tsup emits JS only; the `.d.ts` come from `tsc -p tsconfig.build.json` (its
+// dts backend can't consume the TS 7 compiler API). `clean` is on the first config
+// only, so the second doesn't wipe its siblings.
 export default defineConfig([
   {
     entry: { index: 'src/index.ts', ssr: 'src/ssr.ts' },

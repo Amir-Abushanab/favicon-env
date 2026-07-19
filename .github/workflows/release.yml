@@ -1,12 +1,9 @@
 name: Release
 
-# Gated on Test: runs only after the Test workflow succeeds for a push to main,
-# so a release is never cut from a red commit (tests, typecheck, lint, and the
-# framework matrix must all pass first). When changesets are pending it opens/
-# updates the "Version Packages" PR (bump + CHANGELOG); merging that PR — which
-# leaves no pending changesets — publishes to npm via OIDC trusted publishing
-# (no NPM_TOKEN) with provenance, and pushes the release tag. Configure the
-# trusted publisher on npmjs.com with workflow filename `release.yml`.
+# Runs only after Test succeeds on a push to main, so a release is never cut from a
+# red commit. Pending changesets open the "Version Packages" PR; merging it publishes
+# to npm via OIDC trusted publishing (provenance, no NPM_TOKEN) and pushes the tag.
+# The npm trusted publisher is configured against this filename (release.yml).
 on:
   workflow_run:
     workflows: [Test]
@@ -16,56 +13,45 @@ on:
 concurrency: ${{ github.workflow }}
 
 permissions:
-  contents: write # changesets: commit the version bump + push the release tag
-  pull-requests: write # changesets: open/update the Version Packages PR
-  id-token: write # npm trusted publishing (OIDC) + provenance
+  contents: write # version-bump commit + release tag
+  pull-requests: write # the Version Packages PR
+  id-token: write # OIDC trusted publishing + provenance
 
 jobs:
   release:
-    # Only for a *successful* Test run triggered by a push to main (PR runs are
-    # filtered out by `branches: [main]`, and never publish regardless).
+    # Only a successful, push-triggered Test run (PR runs are filtered by `branches`).
     if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4 # reads the pinned pnpm from package.json
-
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24 # OIDC trusted publishing needs Node > 22
+          node-version: 24 # OIDC needs Node > 22; its bundled npm supports OIDC
           cache: pnpm
-
-      # Node 24 already bundles an npm that supports OIDC trusted publishing
-      # (>= 11.5.1), so we deliberately do NOT `npm install -g npm@latest`: that
-      # pulls npm 12, whose changed output breaks changesets 2.31.0's
-      # already-published detection and crashes the release on no-op pushes.
+      # Don't add `npm i -g npm@latest`: npm 12 breaks changesets 2.31.0's
+      # already-published detection and crashes no-op releases.
       - run: pnpm install --frozen-lockfile
 
-      # Test already ran the full suite; this job only versions/publishes. With no
-      # pending changesets, changesets/action takes its "publish" path and re-runs
-      # `changeset publish` for the CURRENT version; when that version is already on
-      # npm it should skip, but changesets 2.31.0 crashes (isAlreadyPublishedError)
-      # instead. Decide up front and skip in that case. Real releases still run:
-      # pending changesets open the Version PR, a merged Version PR carries a
-      # not-yet-published version.
+      # Skip when there's nothing new: changesets 2.31.0 crashes (rather than no-op'ing)
+      # if it re-publishes an already-live version.
       - name: Is there anything to release?
         id: rel
         run: |
           if ls .changeset/*.md 2>/dev/null | grep -qv '/README\.md$'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"   # pending changesets -> open/refresh the Version PR
+            echo "run=true" >> "$GITHUB_OUTPUT"   # pending changesets -> Version PR
           elif node -e "const p=require('./package.json'); fetch('https://registry.npmjs.org/'+p.name+'/'+p.version).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
-            echo "run=false" >> "$GITHUB_OUTPUT"  # current version already on npm -> nothing to do
+            echo "run=false" >> "$GITHUB_OUTPUT"  # already on npm -> nothing to do
           else
-            echo "run=true" >> "$GITHUB_OUTPUT"   # new version not yet on npm -> publish it
+            echo "run=true" >> "$GITHUB_OUTPUT"   # new version -> publish
           fi
 
       - name: Version PR or publish
         if: steps.rel.outputs.run == 'true'
         uses: changesets/action@v1
         with:
-          version: pnpm run version # changeset version (bump + CHANGELOG)
-          publish: pnpm run release # changeset publish (builds + gates, then publishes)
+          version: pnpm run version
+          publish: pnpm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true # belt-and-suspenders; OIDC also enables it
+          NPM_CONFIG_PROVENANCE: true

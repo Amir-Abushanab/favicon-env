@@ -1,7 +1,5 @@
-// npm-check-updates config — controls `pnpm ncu`.
-//
-// Because package.json is `"type": "module"`, this file MUST be `.ncurc.cjs`
-// (CommonJS). A `.ncurc.js` would be loaded as ESM and `module.exports` would throw.
+// npm-check-updates config (`pnpm ncu`). Must be `.ncurc.cjs`: package.json is
+// `"type": "module"`, so a `.ncurc.js` would load as ESM and `module.exports` would throw.
 module.exports = {
   // Skip versions younger than 7 days. Buys time for the ecosystem to catch
   // regressions / supply-chain compromises before we pull them in.

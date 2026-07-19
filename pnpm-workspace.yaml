@@ -5,7 +5,7 @@
 # `changeset version` fails with "package favicon-env … not in the workspace".
 
 packages:
-  - '.' # the published favicon-env package (the repo root)
+  - '.'
   - 'test/frameworks/*' # private per-framework test fixtures — never published
 
 # Supply-chain defense: skip dependency versions younger than N minutes
