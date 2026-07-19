@@ -1,8 +1,12 @@
-# Single-package repo, but pnpm 11 reads install settings from this file (not the
-# package.json "pnpm" field), so it exists purely to carry the settings below.
+# pnpm 11 reads install settings (below) from this file, not the package.json
+# "pnpm" field. The workspace is the published root package plus the per-framework
+# test fixtures. Listing '.' explicitly keeps favicon-env visible to Changesets —
+# without it, Changesets treats the root as a non-package workspace root and
+# `changeset version` fails with "package favicon-env … not in the workspace".
 
 packages:
-  - 'test/frameworks/*'
+  - '.' # the published favicon-env package (the repo root)
+  - 'test/frameworks/*' # private per-framework test fixtures — never published
 
 # Supply-chain defense: skip dependency versions younger than N minutes
 # (7 days = 10080). Applies to every install, including transitive deps.
