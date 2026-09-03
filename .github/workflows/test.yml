@@ -33,6 +33,9 @@ jobs:
       - run: pnpm publint
       - run: pnpm run intent:validate
       - run: pnpm run intent:stale
+      # Hard gate: intent:stale only warns, so drift between package.json and a
+      # skill's library_version would otherwise ride to main unnoticed.
+      - run: pnpm run skill:check
 
   frameworks:
     runs-on: ubuntu-latest

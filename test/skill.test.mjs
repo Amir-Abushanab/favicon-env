@@ -37,7 +37,10 @@ test('the packed package exposes a loadable, current Intent skill', () => {
       cwd: fixture,
       encoding: 'utf8',
     })
-    assert.match(loaded, /library_version: ['"]0\.2\.0['"]/)
+    // Derived from package.json, never a literal: a hardcoded version here is what let
+    // the skill drift to 0.2.0 while the package was already on 0.3.0.
+    const { version } = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'))
+    assert.match(loaded, new RegExp(`library_version: ['\"]${version.replace(/\./g, '\\.')}['\"]`))
     assert.match(loaded, /TanStack Start/)
     assert.equal(
       loaded,
