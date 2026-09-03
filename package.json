@@ -63,6 +63,7 @@
     "intent:stale": "intent stale skills",
     "skill:sync": "node scripts/skill-version.mjs",
     "skill:check": "node scripts/skill-version.mjs --check",
+    "skill:stale": "node scripts/skill-stale.mjs",
     "pretest": "pnpm build",
     "test": "node --test test/pure.test.mjs test/skill.test.mjs",
     "test:skill": "node --test test/skill.test.mjs",

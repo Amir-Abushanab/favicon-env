@@ -29,12 +29,13 @@ jobs:
         with:
           node-version: 24 # OIDC needs Node > 22; its bundled npm supports OIDC
           cache: pnpm
-      # Don't add `npm i -g npm@latest`: npm 12 breaks changesets 2.31.0's
-      # already-published detection and crashes no-op releases.
       - run: pnpm install --frozen-lockfile
 
-      # Skip when there's nothing new: changesets 2.31.0 crashes (rather than no-op'ing)
-      # if it re-publishes an already-live version.
+      # Skips a pointless changesets/action run when there's nothing to do. This was
+      # load-bearing on changesets 2.31.0, which detected an already-published version
+      # by string-matching npm's stderr and hard-failed when that missed; 3.x returns a
+      # structured already-published result and skips past it, so this is now only an
+      # optimisation. Note the glob doesn't cover .changeset/pre/ (3.x prerelease mode).
       - name: Is there anything to release?
         id: rel
         run: |

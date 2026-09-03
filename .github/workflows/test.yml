@@ -32,9 +32,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm publint
       - run: pnpm run intent:validate
-      - run: pnpm run intent:stale
-      # Hard gate: intent:stale only warns, so drift between package.json and a
-      # skill's library_version would otherwise ride to main unnoticed.
+      # `intent stale` reports but exits 0, so both gates are wrappers that fail.
+      # skill:stale covers everything it flags; skill:check additionally catches a
+      # skill left *ahead* of package.json, which `intent stale` reads as clean.
+      - run: pnpm run skill:stale
       - run: pnpm run skill:check
 
   frameworks:
