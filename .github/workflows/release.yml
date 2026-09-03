@@ -47,12 +47,17 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"   # new version -> publish
           fi
 
+      # Must stay on v2 while @changesets/cli is 3.x. v1 found published packages by
+      # regex-scanning publish stdout for `New tag: <pkg>@<version>`; the 3.x clack
+      # output prints `Successfully published:` with the package on the next line, so
+      # v1 matched nothing, pushed no tags and cut no GitHub releases, while still
+      # exiting 0. v2 reads the CHANGESETS_OUTPUT NDJSON file instead. It also renamed
+      # the inputs, and takes the token as an input (defaulting to github.token).
       - name: Version PR or publish
         if: steps.rel.outputs.run == 'true'
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          version: pnpm run version
-          publish: pnpm run release
+          version-script: pnpm run version
+          publish-script: pnpm run release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
