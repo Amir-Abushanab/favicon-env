@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: favicon-env
-  library_version: '0.3.1'
+  library_version: '0.3.2'
 sources:
   - 'Amir-Abushanab/favicon-env:README.md'
   - 'Amir-Abushanab/favicon-env:src/tint.ts'
