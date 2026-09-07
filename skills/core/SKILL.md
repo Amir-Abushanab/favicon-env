@@ -5,8 +5,9 @@ description: >
   identical tabs are distinguishable. Load when calling envFavicon, choosing
   runtime (canvas) vs build-time (SSR) mode, adding hue/invert/filter tints or
   badges/PR numbers, wiring it into Next.js/TanStack/Astro/SvelteKit/SolidStart/
-  Angular/Nuxt/Vite/plain HTML, or configuring detect, environments, rules, or
-  auto mode.
+  Angular/Nuxt/Vite/plain HTML or a server-rendered non-JS backend
+  (Rails/Django/Laravel/Phoenix/Go/Rust), or configuring detect, environments,
+  rules, or auto mode.
 metadata:
   type: core
   library: favicon-env
@@ -66,6 +67,7 @@ The environment name defaults to a `location.hostname` heuristic (`defaultDetect
 | Nuxt           | `app/plugins/favicon-env.client.ts`, using an explicit Vite build constant     |
 | Vite SPA       | Client entry module (`src/main.ts`, etc.)                                      |
 | Plain HTML     | Native module or the global build (`window.faviconEnv`)                        |
+| Non-JS backend | Global build `<script>` in the server template; `detect` from the injected env |
 
 For any SSR router/head manager that declares the favicon itself, wrap the call in
 the head-observer pattern below. Hydration or navigation can otherwise restore its
@@ -80,6 +82,9 @@ Use `NEXT_PUBLIC_*` in Next and `import.meta.env.VITE_*`/`PUBLIC_*` where those 
 are folded to literals. SvelteKit and Nuxt may preserve their normal public runtime
 configuration, so define a dedicated constant through Vite's `define` option and use
 that in the guard.
+
+In a server-rendered template there is no bundler step to arrange: render the
+`<script>` tags only when the environment is not `prod` and prod ships nothing.
 
 Angular's application builder can emit a lazy chunk even behind a false `define`
 guard. Put the dynamic import in a local loader module and replace that module with a
@@ -129,6 +134,32 @@ void envFavicon({ auto: true });
 
 Derives a deterministic hue from `location.host`, so every origin and port gets its
 own colour — handy for telling several dev servers apart.
+
+### Server-rendered templates — the global build, no bundler
+
+```html
+<link rel="icon" href="/favicon.svg" />
+
+<!-- render these two tags only when the app environment is not prod -->
+<script src="/static/favicon-env.global.js"></script>
+<script>
+  void faviconEnv.envFavicon({
+    environments: { dev: { tint: '#22c55e' }, staging: { badge: '#f59e0b' } },
+    detect: () => 'staging', // interpolate Rails.env / config('app.env') / os.Getenv("APP_ENV")
+  });
+</script>
+```
+
+Runtime mode needs only a browser — it reads `link[rel~="icon"]` (falling back to
+`/favicon.ico`), redraws on canvas, and swaps the `href` — so Rails, Django, Laravel,
+Phoenix, Go, and Rust/Wasm apps serve `dist/favicon-env.global.js` from their static
+assets and let the template inject `detect`. Omitting the two tags in prod is the
+whole zero-bytes story there. Add the head observer only where something re-renders
+`<head>` (Turbo Drive, Inertia, `leptos_meta`); plain templates, htmx body swaps, and
+LiveView leave it alone. For a Rust/Wasm SPA the tag in the `index.html` shell is
+enough — no `wasm-bindgen` interop. `favicon-env/ssr` is the one JS-only entry point:
+run it as a Node build step emitting one SVG per environment if the no-flash path
+matters.
 
 ### Build-time SSR — no first-paint flash
 
@@ -355,3 +386,32 @@ const href = document.querySelector('link[rel~="icon"]').href;
 redrawing; the `<link>` is not replaced until it resolves.
 
 Source: src/tint.ts (returns `Promise`, `img` load listener)
+
+### MEDIUM — Expecting the global build's `data-*` attributes to carry the environment
+
+Wrong:
+
+```html
+<!-- beta.acme.internal — no `staging`/`qa`/… segment, so the heuristic says `prod` -->
+<script src="/static/favicon-env.global.js" data-staging="45"></script>
+```
+
+Correct:
+
+```html
+<script src="/static/favicon-env.global.js"></script>
+<script>
+  void faviconEnv.envFavicon({
+    environments: { staging: { hue: 45 } },
+    detect: () => 'staging', // filled in by the server template
+  });
+</script>
+```
+
+`data-<env>="<degrees>"` only declares hues (non-numeric values are dropped, and any
+other numeric `data-*` becomes an environment); the current env is still resolved by
+`defaultDetect`. When the host doesn't match that heuristic, call `envFavicon`
+explicitly with a `detect` the server fills in. `data-auto` is the exception: it
+ignores `environments` and hashes `location.host`.
+
+Source: src/global.ts (boot), src/detect.ts

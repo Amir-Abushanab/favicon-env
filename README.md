@@ -545,6 +545,37 @@ For a zero-byte prod page, have the HTML build/template omit these scripts when 
 
 </details>
 
+<details>
+<summary><b>Non-JS backends</b> — Rails, Django, Laravel, Phoenix, Go, Rust</summary>
+
+Runtime mode asks nothing of the server: it reads the page's `<link rel="icon">` (or falls back to `/favicon.ico`), redraws it on a canvas, and swaps the `href`. No bundler and no JavaScript framework are involved, so serve the global build from your static assets and let the template supply the environment:
+
+```html
+<link rel="icon" href="/favicon.svg" />
+
+<!-- render these two tags only when the app environment is not `prod` -->
+<script src="/static/favicon-env.global.js"></script>
+<script>
+  void faviconEnv.envFavicon({
+    environments: {
+      dev: { tint: '#22c55e' },
+      staging: { badge: { text: 'S', color: '#f59e0b', shape: 'cover' } },
+    },
+    detect: () => 'staging', // interpolate the server's env value here
+  });
+</script>
+```
+
+Pass whatever the stack already knows — `Rails.env`, `settings.DEBUG`, `config('app.env')`, `Application.get_env(:my_app, :env)`, `os.Getenv("APP_ENV")` — through your template's normal escaping. Without it the hostname heuristic still applies, which is enough when your hosts follow the usual conventions.
+
+Having the template omit those two tags in `prod` is the whole [zero-bytes-in-prod](#zero-bytes-in-prod) story here: nothing is served, so there is no bundler dead-code elimination to arrange. The `Plain HTML (global)` entry in the framework matrix exercises this exact shape — a server that renders the script conditionally and injects `detect` — so only the template language differs.
+
+Add the head-observer pattern from the examples above only if something re-renders `<head>` after load: Turbo Drive, Inertia's head manager, `leptos_meta`. Plain server templates, htmx body swaps, and LiveView leave `<head>` alone, so a single call is enough. For a Rust/Wasm SPA (Leptos, Dioxus, Yew), the script tag in the `index.html` shell is all you need — no `wasm-bindgen` interop.
+
+[Build-time mode](#build-time--ssr-mode) is the one piece that needs a JavaScript runtime; see the note there.
+
+</details>
+
 By default the environment is guessed from the hostname (`localhost` / `*.local` / raw IPs → `dev`; a `staging`/`preview`/`qa`/… segment → `staging`; everything else → `prod`). Override it:
 
 ```js
@@ -678,6 +709,8 @@ The SSR entry has no DOM dependency and supports badges:
 const pr = process.env.VERCEL_GIT_PULL_REQUEST_ID;
 faviconDataUri(favicon, pr ? { badge: { text: `#${pr}` } } : { hue: 45 });
 ```
+
+`favicon-env/ssr` is JavaScript, so a non-JS server can't call it in-process. Run it as a Node build step that writes one SVG per environment (`favicon.dev.svg`, `favicon.staging.svg`) and have the template pick one, or stay on runtime mode and accept its brief flash. `tintSvg` itself is plain string manipulation — a wrapping filtered `<g>` plus an optional badge `<g>` — if you would rather port it to the host language.
 
 ### Vite
 
