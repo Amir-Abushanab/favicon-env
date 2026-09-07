@@ -21,9 +21,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4 # reads the pinned pnpm from package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5 # reads the pinned pnpm from package.json
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
