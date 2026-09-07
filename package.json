@@ -57,7 +57,7 @@
     "format": "oxfmt src",
     "knip": "knip",
     "depcruise": "depcruise src",
-    "check": "oxfmt --check src && oxlint src && knip && depcruise src",
+    "check": "oxfmt --check src && oxlint src && knip && depcruise src && pnpm run skill:stale && pnpm run skill:check",
     "publint": "publint --strict",
     "intent:validate": "intent validate skills",
     "intent:stale": "intent stale skills",
