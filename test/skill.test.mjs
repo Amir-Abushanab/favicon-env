@@ -24,7 +24,11 @@ test('the packed package exposes a loadable, current Intent skill', () => {
       path.join(fixture, 'package.json'),
       JSON.stringify({ name: 'favicon-env-skill-consumer', private: true }, null, 2),
     )
-    execFileSync('pnpm', ['add', '--ignore-workspace', `file:${tarball}`], {
+    // `favicon-env@file:…`, not a bare `file:…`: pnpm 12 parses a lone path or `file:`
+    // spec as a registry package name and fails with
+    // ERR_PNPM_PACKAGE_MANAGER_ADD_RESOLVE_LATEST ("Package name … is invalid, it should
+    // have a @scope"). The named form installs the tarball on both pnpm 11 and 12.
+    execFileSync('pnpm', ['add', '--ignore-workspace', `favicon-env@file:${tarball}`], {
       cwd: fixture,
       stdio: 'pipe',
     })

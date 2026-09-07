@@ -1,4 +1,4 @@
-# pnpm 11 reads install settings (below) from this file, not the package.json
+# pnpm 11+ reads install settings (below) from this file, not the package.json
 # "pnpm" field. The workspace is the published root package plus the per-framework
 # test fixtures. Listing '.' explicitly keeps favicon-env visible to Changesets —
 # without it, Changesets treats the root as a non-package workspace root and
@@ -10,13 +10,13 @@ packages:
 
 # Supply-chain defense: skip dependency versions younger than N minutes
 # (7 days = 10080). Applies to every install, including transitive deps.
-# Requires pnpm >= 10.16.0 (we pin 11.12.0 via packageManager).
+# Requires pnpm >= 10.16.0 (we pin 12.1.0 via packageManager).
 minimumReleaseAge: 10080
 # Some registry packages omit publish-time metadata; bypass the cooldown for
 # those rather than failing the install.
 minimumReleaseAgeIgnoreMissingTime: true
 
-# pnpm 11 requires explicit per-package approval to run install scripts. tsup
+# pnpm 11+ requires explicit per-package approval to run install scripts. tsup
 # bundles with esbuild, whose postinstall downloads its native binary; without
 # this, that build is skipped and `pnpm build` breaks.
 allowBuilds:
