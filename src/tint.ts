@@ -3,6 +3,7 @@ import { contrastColor } from './color';
 import { defaultDetect } from './detect';
 import { cssFilter } from './filter';
 import { hashHue } from './hash';
+import { applyMatrices, filterMatrices } from './matrix';
 import type { Badge, EnvFaviconOptions, EnvRule, EnvTint, RuleBadge } from './types';
 
 /** Selector for the favicon `<link>`(s) we read from and replace. */
@@ -97,6 +98,34 @@ function applyFavicon(href: string, type?: string): void {
   link.href = href;
   link.dataset.faviconEnv = '';
   document.head.append(link);
+}
+
+/**
+ * Draw `img` through `filter`. Chromium and Firefox get the native `ctx.filter`;
+ * WebKit/Safari ships no such property (assigning it is a silent no-op, which is
+ * why hue / invert / auto used to do nothing there), so the filter is replayed
+ * as a colour-matrix pass over the drawn pixels instead. A filter no matrix can
+ * express (`blur`, `drop-shadow`) is skipped on that path — the icon is drawn
+ * untinted rather than half-filtered, and any badge still lands on top.
+ */
+function drawFiltered(
+  ctx: CanvasRenderingContext2D,
+  img: CanvasImageSource,
+  size: number,
+  filter: string,
+): void {
+  if (typeof ctx.filter === 'string') {
+    ctx.filter = filter;
+    ctx.drawImage(img, 0, 0, size, size);
+    ctx.filter = 'none';
+    return;
+  }
+  ctx.drawImage(img, 0, 0, size, size);
+  const matrices = filterMatrices(filter);
+  if (!matrices || matrices.length === 0) return;
+  const image = ctx.getImageData(0, 0, size, size);
+  applyMatrices(image.data, matrices);
+  ctx.putImageData(image, 0, 0);
 }
 
 function contrastText(ctx: CanvasRenderingContext2D, background: string): string {
@@ -254,13 +283,13 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
         if (ctx) {
           // `cover` replaces the icon, so it ignores any recolour. Otherwise:
           // `tint` colourises the base to an exact colour (grayscale → multiply →
-          // re-mask the original alpha), else a `hue`/`invert`/`filter` is a plain
-          // CSS filter. The base is always drawn — a translucent cover shows through.
+          // re-mask the original alpha), else a `hue`/`invert`/`filter` is one CSS
+          // filter. Both go through `drawFiltered`, which is what keeps them
+          // working in WebKit. The base is always drawn — a translucent cover
+          // shows through.
           const colorize = !cover && !tint.filter ? tint.tint : undefined;
           if (colorize) {
-            ctx.filter = 'grayscale(1)';
-            ctx.drawImage(img, 0, 0, size, size);
-            ctx.filter = 'none';
+            drawFiltered(ctx, img, size, 'grayscale(1)');
             ctx.globalCompositeOperation = 'multiply';
             ctx.fillStyle = colorize;
             ctx.fillRect(0, 0, size, size);
@@ -268,12 +297,9 @@ export function envFavicon(options: EnvFaviconOptions = {}): Promise<void> {
             ctx.drawImage(img, 0, 0, size, size);
             ctx.globalCompositeOperation = 'source-over';
           } else {
-            if (!cover) {
-              const filter = cssFilter(tint);
-              if (filter) ctx.filter = filter;
-            }
-            ctx.drawImage(img, 0, 0, size, size);
-            ctx.filter = 'none';
+            const filter = cover ? null : cssFilter(tint);
+            if (filter) drawFiltered(ctx, img, size, filter);
+            else ctx.drawImage(img, 0, 0, size, size);
           }
           if (badge) {
             ctx.globalAlpha = alpha;

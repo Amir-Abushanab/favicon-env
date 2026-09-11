@@ -1,6 +1,7 @@
 import { badgeText, DEFAULT_BADGE_COLOR, normalizeBadge, placeBadge } from './badge';
 import { contrastColor } from './color';
 import { cssFilter } from './filter';
+import { type ColorMatrix, filterMatrices } from './matrix';
 import type { Badge, EnvConfig } from './types';
 
 const XML_ESCAPES: Record<string, string> = {
@@ -113,6 +114,23 @@ function svgCover([minX, minY, w, h]: [number, number, number, number], badge: B
   return `<g${op}>${rect}${label}</g>`;
 }
 
+/** Matrix coefficients need more precision than geometry; 5 places is exact enough. */
+const round5 = (n: number): number => Math.round(n * 1e5) / 1e5;
+
+/**
+ * An SVG `<filter>` that runs a `hue`/`invert`/`filter` chain as `feColorMatrix`
+ * primitives. A CSS `filter` on an inner SVG element is ignored by WebKit, so
+ * this — not `<g style="filter:…">` — is the form every engine honours. The
+ * chain is one primitive per CSS filter function, which is also how a browser
+ * evaluates the string (each result clamped to 0–1 before the next).
+ */
+function svgFilterChain(matrices: readonly ColorMatrix[]): string {
+  const primitives = matrices
+    .map((m) => `<feColorMatrix type="matrix" values="${m.map(round5).join(' ')}"/>`)
+    .join('');
+  return `<filter id="__favenv_f" color-interpolation-filters="sRGB">${primitives}</filter>`;
+}
+
 /**
  * An SVG `<filter>` that colourises the icon to `color`, mirroring the runtime
  * canvas path: desaturate → multiply the flood colour → re-mask the original
@@ -163,15 +181,23 @@ export function tintSvg(svg: string, tint: EnvConfig): string {
   const inner = svg.slice(openEnd, close);
   // No XML comments injected here — XML comments may not contain `--`, which
   // every `--custom-property` does, and that silently breaks favicon SVGs.
-  // `tint` colourises via an SVG `<filter>`; else `hue`/`filter` is a CSS filter.
+  // Both `tint` and `hue`/`invert`/`filter` go through an SVG `<filter>`: WebKit
+  // ignores a CSS `filter` on an inner SVG element, so the CSS form below is
+  // only a last resort for a filter with no matrix equivalent (`blur`, …).
   let defs = '';
   let body = inner;
   if (colorize) {
     defs = svgColorize(colorize);
     body = `<g filter="url(#__favenv_c)">${inner}</g>`;
   } else if (filter) {
-    defs = `<style>.__favenv{filter:${filter}}</style>`;
-    body = `<g class="__favenv">${inner}</g>`;
+    const matrices = filterMatrices(filter);
+    if (!matrices) {
+      defs = `<style>.__favenv{filter:${escapeXml(filter)}}</style>`;
+      body = `<g class="__favenv">${inner}</g>`;
+    } else if (matrices.length > 0) {
+      defs = svgFilterChain(matrices);
+      body = `<g filter="url(#__favenv_f)">${inner}</g>`;
+    }
   }
   const viewBox = badge ? parseViewBox(open[0]) : null;
   const badgeSvg = badge && viewBox ? svgBadge(viewBox, badge) : '';

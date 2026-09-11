@@ -781,7 +781,7 @@ The favicon must be an SVG in `public/`. Omit a mode to leave it unchanged.
 
 ### `favicon-env/ssr` — build-time
 
-- `tintSvg(svg, tint) => string` — SVG string with the tint baked in as a wrapping filtered group.
+- `tintSvg(svg, tint) => string` — SVG string with the tint baked in as a group wrapped in an SVG `<filter>`.
 - `svgToDataUri(svg) => string` — percent-encoded `data:image/svg+xml,…`.
 - `faviconDataUri(svg, tint) => string` — the two combined; a ready favicon `href`.
 
@@ -795,7 +795,7 @@ The favicon must be an SVG in `public/`. Omit a mode to leave it unchanged.
 
 - Cross-origin favicons need CORS permission for runtime canvas processing; failures leave the icon unchanged.
 - Runtime mode may briefly show the original icon. Use the SSR helper to avoid this.
-- Runtime mode requires canvas `ctx.filter`; unsupported browsers keep the original icon.
+- WebKit/Safari implements no canvas `ctx.filter`, and ignores a CSS `filter` on an inner SVG element. Both modes therefore apply `hue` / `invert` / `tint` / `filter` as colour matrices, so every engine renders the same icon. The two exceptions are `blur()` and `drop-shadow()` inside an explicit `filter` string — they have no matrix form, so they need Chromium or Firefox.
 
 ## License
 

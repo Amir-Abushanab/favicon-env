@@ -172,8 +172,10 @@ const href = faviconDataUri(favicon, { hue: 130 });
 // → render into <link rel="icon" type="image/svg+xml" href={href}>
 ```
 
-`favicon-env/ssr` is pure string manipulation (no DOM), safe in Node. It bakes a
-CSS `filter` and/or badge into the SVG using its `viewBox`.
+`favicon-env/ssr` is pure string manipulation (no DOM), safe in Node. It bakes an
+SVG `<filter>` (a `feColorMatrix` chain) and/or badge into the SVG using its
+`viewBox` — an SVG `<filter>` rather than a CSS one because WebKit ignores a CSS
+`filter` set on an inner SVG element.
 
 ## Common Mistakes
 

@@ -86,15 +86,45 @@ test('tintSvg wraps content in a filtered group', () => {
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#00f"/></svg>';
   const out = tintSvg(svg, { hue: 120 });
-  assert.match(out, /hue-rotate\(120deg\)/);
-  assert.match(out, /class="__favenv"/);
+  // A real SVG <filter>, not a CSS one: WebKit ignores a CSS `filter` set on an
+  // inner SVG element, which left hue/invert doing nothing there.
+  assert.match(out, /<filter[^>]*id="__favenv_f"[^>]*color-interpolation-filters="sRGB"/);
+  assert.match(out, /<feColorMatrix type="matrix" values="[-\d. ]+"\/>/);
+  assert.match(out, /<g filter="url\(#__favenv_f\)">/);
+  assert.ok(!out.includes('__favenv{filter'), 'no CSS filter for a hue');
   assert.ok(out.includes('<rect'), 'keeps original content');
   assert.ok(!out.includes('<!--'), 'injects no XML comment (— double-hyphen hazard)');
 });
 
 test('tintSvg honours an explicit filter over hue', () => {
   const svg = '<svg viewBox="0 0 1 1"></svg>';
-  assert.match(tintSvg(svg, { hue: 10, filter: 'saturate(2)' }), /filter:saturate\(2\)/);
+  const only = tintSvg(svg, { filter: 'saturate(2)' });
+  assert.equal(tintSvg(svg, { hue: 10, filter: 'saturate(2)' }), only);
+  assert.notEqual(tintSvg(svg, { hue: 10, filter: 'saturate(2)' }), tintSvg(svg, { hue: 10 }));
+});
+
+test('tintSvg emits one feColorMatrix per filter function, in order', () => {
+  const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', {
+    filter: 'grayscale(1) hue-rotate(90deg) brightness(1.2)',
+  });
+  assert.equal(out.match(/<feColorMatrix/g).length, 3);
+  // Each function is its own primitive because the spec clamps between them.
+  assert.match(out, /values="0\.213 0\.715 0\.072 0 0/, 'grayscale first');
+  assert.match(out, /values="1\.2 0 0 0 0 0 1\.2 0 0 0 0 0 1\.2 0 0 0 0 0 1 0"\/><\/filter>/);
+});
+
+test('tintSvg falls back to a CSS filter for a filter with no matrix form', () => {
+  // blur() and drop-shadow() move pixels around, so they can't be a colour
+  // matrix — the CSS form is emitted (and WebKit still won't honour it).
+  const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', { filter: 'blur(1px)' });
+  assert.match(out, /<style>\.__favenv\{filter:blur\(1px\)\}<\/style>/);
+  assert.match(out, /<g class="__favenv">/);
+  assert.ok(!out.includes('feColorMatrix'), 'no half-applied matrix chain');
+});
+
+test('tintSvg escapes a fallback filter string', () => {
+  const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', { filter: 'blur(1px)</style><script>bad' });
+  assert.ok(!out.includes('<script>'), 'no raw markup leaks via the filter string');
 });
 
 test('tintSvg is a no-op for empty/false tints and non-svg input', () => {
@@ -120,7 +150,7 @@ test('tintSvg colourises to an exact colour via a duotone SVG filter', () => {
 test('tint precedence: explicit filter beats tint beats hue', () => {
   const svg = '<svg viewBox="0 0 1 1"></svg>';
   const filterWins = tintSvg(svg, { tint: '#f00', filter: 'saturate(2)' });
-  assert.match(filterWins, /filter:saturate\(2\)/);
+  assert.equal(filterWins, tintSvg(svg, { filter: 'saturate(2)' }));
   assert.ok(!filterWins.includes('__favenv_c'), 'filter overrides tint');
   const tintWins = tintSvg(svg, { tint: '#f00', hue: 90 });
   assert.match(tintWins, /__favenv_c/);
@@ -134,21 +164,24 @@ test('tintSvg escapes the tint colour', () => {
 
 // --- invert ---
 
-test('tintSvg inverts the icon via a CSS filter', () => {
+test('tintSvg inverts the icon via an SVG filter', () => {
   const svg = '<svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#00f"/></svg>';
   const out = tintSvg(svg, { invert: true });
-  assert.match(out, /filter:invert\(1\)/);
-  assert.match(out, /class="__favenv"/);
+  // invert(a) is affine — `c' = a + c(1 - 2a)` — so it is exactly this matrix.
+  assert.match(out, /values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0"/);
+  assert.match(out, /<g filter="url\(#__favenv_f\)">/);
   assert.ok(out.includes('<rect'), 'keeps the original artwork');
 });
 
 test('invert accepts a 0–1 amount', () => {
-  assert.match(tintSvg('<svg viewBox="0 0 1 1"></svg>', { invert: 0.85 }), /filter:invert\(0\.85\)/);
+  const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', { invert: 0.85 });
+  assert.match(out, /values="-0\.7 0 0 0 0\.85 /);
 });
 
-test('invert composes with hue in a single filter', () => {
+test('invert composes with hue as two chained primitives', () => {
   const out = tintSvg('<svg viewBox="0 0 1 1"></svg>', { hue: 130, invert: true });
-  assert.match(out, /filter:hue-rotate\(130deg\) invert\(1\)/);
+  assert.equal(out.match(/<feColorMatrix/g).length, 2);
+  assert.match(out, /<feColorMatrix[^>]*\/><feColorMatrix[^>]*values="-1 0 0 0 1 /, 'hue then invert');
 });
 
 test('invert false / 0 is a no-op', () => {
@@ -159,16 +192,17 @@ test('invert false / 0 is a no-op', () => {
 
 test('invert precedence: explicit filter beats it, tint (duotone) beats it', () => {
   const svg = '<svg viewBox="0 0 1 1"></svg>';
-  assert.match(tintSvg(svg, { invert: true, filter: 'saturate(2)' }), /filter:saturate\(2\)/);
+  const only = tintSvg(svg, { filter: 'saturate(2)' });
+  assert.equal(tintSvg(svg, { invert: true, filter: 'saturate(2)' }), only);
   const tintWins = tintSvg(svg, { invert: true, tint: '#22c55e' });
   assert.match(tintWins, /__favenv_c/);
-  assert.ok(!tintWins.includes('invert('), 'tint overrides invert');
+  assert.ok(!tintWins.includes('__favenv_f'), 'tint overrides invert');
 });
 
 test('invert composites with a badge', () => {
   const svg = '<svg viewBox="0 0 64 64"><rect width="64" height="64"/></svg>';
   const out = tintSvg(svg, { invert: true, badge: '#f00' });
-  assert.match(out, /filter:invert\(1\)/);
+  assert.match(out, /values="-1 0 0 0 1 /);
   assert.match(out, /<rect[^>]*fill="#f00"/, 'draws the badge on top');
 });
 
@@ -189,7 +223,7 @@ test('faviconDataUri returns a decodable, tinted svg data uri', () => {
   const uri = faviconDataUri(svg, { hue: 200 });
   assert.ok(uri.startsWith('data:image/svg+xml,'));
   const decoded = decodeURIComponent(uri.slice('data:image/svg+xml,'.length));
-  assert.match(decoded, /hue-rotate\(200deg\)/);
+  assert.match(decoded, /<feColorMatrix type="matrix"/);
 });
 
 // --- badges (number / dot overlay) ---
@@ -205,8 +239,7 @@ test('tintSvg renders a text badge outside the filter group', () => {
 
 test('tintSvg combines a filter and a badge', () => {
   const out = tintSvg('<svg viewBox="0 0 32 32"><rect/></svg>', { hue: 90, badge: { text: 1 } });
-  assert.match(out, /hue-rotate\(90deg\)/);
-  assert.match(out, /class="__favenv"/);
+  assert.match(out, /<g filter="url\(#__favenv_f\)"><rect\/><\/g>/, 'only the artwork is filtered');
   assert.match(out, />1</);
 });
 
