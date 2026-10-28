@@ -3,16 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
+    "dev": "vite dev",
+    "build": "vite build",
     "start": "node start.mjs"
   },
   "dependencies": {
     "@solidjs/meta": "^0.29.4",
-    "@solidjs/router": "^0.15.4",
-    "@solidjs/start": "^1.3.2",
+    "@solidjs/router": "^1.0.0",
+    "@solidjs/start": "^2.0.6",
     "favicon-env": "workspace:*",
-    "solid-js": "^1.9.14",
-    "vinxi": "^0.5.8"
+    "solid-js": "^1.9.17"
+  },
+  "devDependencies": {
+    "nitro": "3.0.260903-beta",
+    "vite": "^8.3.5"
   }
 }

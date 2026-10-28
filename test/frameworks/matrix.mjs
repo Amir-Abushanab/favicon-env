@@ -38,8 +38,18 @@ export const frameworks = [
     effects: ['automatic host hue', 'dot badge'],
     clientBundleDir: (instance) => fixture(`astro/dist-${instance}`),
     devCommand: () => command('node', 'dev.mjs'),
+    // --ignore-lock keeps preview in the foreground. Astro 7.4 detaches it into
+    // a background daemon (and this process exits 0) when it detects an AI agent.
     startCommand: (port) =>
-      command('node_modules/.bin/astro', 'preview', '--host', '127.0.0.1', '--port', port),
+      command(
+        'node_modules/.bin/astro',
+        'preview',
+        '--ignore-lock',
+        '--host',
+        '127.0.0.1',
+        '--port',
+        port,
+      ),
   },
   {
     id: 'sveltekit',
@@ -64,7 +74,7 @@ export const frameworks = [
     effects: ['translucent cover badge', 'combined hue and partial inversion'],
     clientBundleDir: (instance) => fixture(`solid-start/.output-${instance}/public`),
     devCommand: (port) =>
-      command('node_modules/.bin/vinxi', 'dev', '--host', '127.0.0.1', '--port', port),
+      command('node_modules/.bin/vite', 'dev', '--host', '127.0.0.1', '--port', port),
     startCommand: () => command('node', 'start.mjs'),
   },
   {
