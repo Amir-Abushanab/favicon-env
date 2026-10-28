@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node start.mjs"
+    "start": "node start.mjs",
+    "prepare": "svelte-kit sync"
   },
   "dependencies": {
     "@sveltejs/adapter-node": "6.0.0",
