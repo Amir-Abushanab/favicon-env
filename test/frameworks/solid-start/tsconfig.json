@@ -7,11 +7,11 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vinxi/types/client"],
+    "types": ["@solidjs/start/env"],
     "strict": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["src", "app.config.ts"]
+  "include": ["src", "vite.config.ts"]
 }

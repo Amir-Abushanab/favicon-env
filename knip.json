@@ -11,7 +11,7 @@
       "project": ["**/*.{ts,tsx}"]
     },
     "test/frameworks/tanstack-start": {
-      "entry": ["src/client.tsx", "src/router.tsx", "src/routes/**/*.tsx"],
+      "entry": ["src/routes/**/*.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "test/frameworks/astro": {
@@ -19,11 +19,15 @@
       "project": ["src/**/*.astro"]
     },
     "test/frameworks/sveltekit": {
-      "entry": ["src/routes/**/*.svelte"],
+      // SvelteKit 3 reads declared env vars from src/env.ts by convention.
+      "entry": ["src/routes/**/*.svelte", "src/env.ts"],
       "project": ["src/**/*.{ts,svelte}"]
     },
     "test/frameworks/solid-start": {
-      "entry": ["src/**/*.{ts,tsx}"],
+      // Knip loads vite.config.ts from the repo root, where solidStart() can't find
+      // ./src/app.tsx and throws. Read the config's imports statically instead.
+      "vite": false,
+      "entry": ["src/**/*.{ts,tsx}", "vite.config.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "test/frameworks/angular": {

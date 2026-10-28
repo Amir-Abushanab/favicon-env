@@ -87,21 +87,21 @@
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
-    "@changesets/cli": "^3.0.1",
-    "@playwright/test": "^1.62.1",
-    "@swc/core": "^1.16.1",
-    "@tanstack/intent": "^0.3.8",
-    "dependency-cruiser": "^18.2.0",
-    "knip": "^6.33.0",
-    "oxfmt": "^0.65.0",
-    "oxlint": "^1.80.0",
-    "publint": "^0.3.24",
+    "@changesets/cli": "^3.0.3",
+    "@playwright/test": "^1.64.1",
+    "@swc/core": "^1.16.18",
+    "@tanstack/intent": "^0.5.6",
+    "dependency-cruiser": "^18.7.0",
+    "knip": "^6.42.1",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
+    "publint": "^0.3.25",
     "simple-git-hooks": "^2.14.0",
-    "tsup": "^8.5.1",
+    "tsup": "^9.0.0",
     "typescript": "^7.0.2"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm check"
   },
-  "packageManager": "pnpm@12.1.0"
+  "packageManager": "pnpm@12.15.0"
 }

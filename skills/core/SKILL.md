@@ -31,7 +31,7 @@ when you control the favicon SVG.
 
 Runtime — gate the import with a compile-time public environment value:
 
-```js
+```js no-check
 const appEnv = import.meta.env.VITE_APP_ENV ?? 'prod';
 
 if (appEnv === 'dev' || appEnv === 'staging') {
@@ -374,14 +374,14 @@ Wrong:
 
 ```js
 envFavicon({ environments: { dev: { hue: 130 } } });
-const href = document.querySelector('link[rel~="icon"]').href; // old icon — not swapped yet
+const href = document.querySelector('link[rel~="icon"]')?.getAttribute('href'); // old icon — not swapped yet
 ```
 
 Correct:
 
 ```js
 await envFavicon({ environments: { dev: { hue: 130 } } });
-const href = document.querySelector('link[rel~="icon"]').href;
+const href = document.querySelector('link[rel~="icon"]')?.getAttribute('href');
 ```
 
 `envFavicon` returns a `Promise` and loads the base image asynchronously before
